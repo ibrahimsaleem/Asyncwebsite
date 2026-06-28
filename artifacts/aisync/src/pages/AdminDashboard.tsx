@@ -8,9 +8,12 @@ import {
   useListInvoices,
   useListFeatureRequests,
   useListDemoRequests,
+  useCreateClient,
+  useCreateProject,
   useCreateEmployee,
   useUpdateFeatureRequest,
   useDeleteEmployee,
+  ProjectInputStatus,
   getGetAdminSummaryQueryKey,
   getListClientsQueryKey,
   getListProjectsQueryKey,
@@ -64,6 +67,26 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("overview");
   const qc = useQueryClient();
 
+  // New client form
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [newClientBusiness, setNewClientBusiness] = useState("");
+  const [newClientIndustry, setNewClientIndustry] = useState("");
+  const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientPassword, setNewClientPassword] = useState("");
+  const [addingClient, setAddingClient] = useState(false);
+
+  // New project form
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [newProjClientId, setNewProjClientId] = useState("");
+  const [newProjName, setNewProjName] = useState("");
+  const [newProjDesc, setNewProjDesc] = useState("");
+  const [newProjStatus, setNewProjStatus] = useState<string>(ProjectInputStatus.onboarding);
+  const [newProjStart, setNewProjStart] = useState("");
+  const [newProjEnd, setNewProjEnd] = useState("");
+  const [addingProject, setAddingProject] = useState(false);
+
   // New employee form
   const [newEmpName, setNewEmpName] = useState("");
   const [newEmpRole, setNewEmpRole] = useState("");
@@ -79,9 +102,60 @@ export default function AdminDashboard() {
   const { data: featureRequests } = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
   const { data: demoRequests } = useListDemoRequests({ query: { queryKey: getListDemoRequestsQueryKey() } });
 
+  const createClient = useCreateClient();
+  const createProject = useCreateProject();
   const createEmployee = useCreateEmployee();
   const updateFeatureRequest = useUpdateFeatureRequest();
   const deleteEmployee = useDeleteEmployee();
+
+  async function handleAddClient(e: React.FormEvent) {
+    e.preventDefault();
+    setAddingClient(true);
+    try {
+      await createClient.mutateAsync({
+        data: {
+          name: newClientName,
+          email: newClientEmail,
+          businessName: newClientBusiness,
+          industry: newClientIndustry,
+          phone: newClientPhone,
+          password: newClientPassword || undefined,
+        },
+      });
+      setNewClientName(""); setNewClientEmail(""); setNewClientBusiness("");
+      setNewClientIndustry(""); setNewClientPhone(""); setNewClientPassword("");
+      setShowClientForm(false);
+      qc.invalidateQueries({ queryKey: getListClientsQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+    } finally {
+      setAddingClient(false);
+    }
+  }
+
+  async function handleAddProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newProjClientId) return;
+    setAddingProject(true);
+    try {
+      await createProject.mutateAsync({
+        data: {
+          clientId: parseInt(newProjClientId, 10),
+          projectName: newProjName,
+          description: newProjDesc,
+          status: newProjStatus as typeof ProjectInputStatus[keyof typeof ProjectInputStatus],
+          startDate: newProjStart || undefined,
+          expectedCompletionDate: newProjEnd || undefined,
+        },
+      });
+      setNewProjClientId(""); setNewProjName(""); setNewProjDesc("");
+      setNewProjStatus(ProjectInputStatus.onboarding); setNewProjStart(""); setNewProjEnd("");
+      setShowProjectForm(false);
+      qc.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+    } finally {
+      setAddingProject(false);
+    }
+  }
 
   async function handleAddEmployee(e: React.FormEvent) {
     e.preventDefault();
@@ -205,7 +279,30 @@ export default function AdminDashboard() {
                 <h1 className="text-3xl font-bold mb-1">Clients</h1>
                 <p className="text-muted-foreground">All client accounts.</p>
               </div>
+              <button
+                onClick={() => setShowClientForm((v) => !v)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                {showClientForm ? "Cancel" : "+ Add Client"}
+              </button>
             </div>
+
+            {showClientForm && (
+              <form onSubmit={handleAddClient} className="bg-card border border-border rounded-xl p-6 mb-6">
+                <h3 className="font-semibold mb-4">New Client</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <input required value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <input required value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} placeholder="Email address" type="email" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <input required value={newClientBusiness} onChange={(e) => setNewClientBusiness(e.target.value)} placeholder="Business name" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <input value={newClientIndustry} onChange={(e) => setNewClientIndustry(e.target.value)} placeholder="Industry (e.g. Dental)" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <input value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} placeholder="Phone number" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <input value={newClientPassword} onChange={(e) => setNewClientPassword(e.target.value)} placeholder="Portal password (optional)" type="password" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                </div>
+                <button type="submit" disabled={addingClient} className="mt-4 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  {addingClient ? "Adding…" : "Add Client"}
+                </button>
+              </form>
+            )}
 
             {clients && clients.length > 0 ? (
               <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -250,8 +347,63 @@ export default function AdminDashboard() {
         {/* ── PROJECTS ── */}
         {tab === "projects" && (
           <div>
-            <h1 className="text-3xl font-bold mb-1">Projects</h1>
-            <p className="text-muted-foreground mb-8">All client projects and their status.</p>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold mb-1">Projects</h1>
+                <p className="text-muted-foreground">All client projects and their status.</p>
+              </div>
+              <button
+                onClick={() => setShowProjectForm((v) => !v)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                {showProjectForm ? "Cancel" : "+ Add Project"}
+              </button>
+            </div>
+
+            {showProjectForm && (
+              <form onSubmit={handleAddProject} className="bg-card border border-border rounded-xl p-6 mb-6">
+                <h3 className="font-semibold mb-4">New Project</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <select
+                      required
+                      value={newProjClientId}
+                      onChange={(e) => setNewProjClientId(e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <option value="">Select client…</option>
+                      {clients?.map((c) => (
+                        <option key={c.id} value={c.id}>{c.businessName} ({c.userEmail})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <input required value={newProjName} onChange={(e) => setNewProjName(e.target.value)} placeholder="Project name" className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <select
+                    value={newProjStatus}
+                    onChange={(e) => setNewProjStatus(e.target.value)}
+                    className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    {Object.entries(PROJECT_STATUS_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
+                  </select>
+                  <div className="col-span-2">
+                    <textarea required value={newProjDesc} onChange={(e) => setNewProjDesc(e.target.value)} placeholder="Project description" rows={2} className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Start date</label>
+                    <input type="date" value={newProjStart} onChange={(e) => setNewProjStart(e.target.value)} className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Expected completion</label>
+                    <input type="date" value={newProjEnd} onChange={(e) => setNewProjEnd(e.target.value)} className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  </div>
+                </div>
+                <button type="submit" disabled={addingProject || !newProjClientId} className="mt-4 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  {addingProject ? "Adding…" : "Add Project"}
+                </button>
+              </form>
+            )}
 
             {projects && projects.length > 0 ? (
               <div className="space-y-4">
