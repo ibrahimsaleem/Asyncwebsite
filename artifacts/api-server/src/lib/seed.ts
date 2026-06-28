@@ -19,6 +19,14 @@ export async function seedIfEmpty() {
     }).returning();
   }
 
+  let admin2 = byEmail.get("admin2@aisync.ai");
+  if (!admin2) {
+    const hash = await bcrypt.hash("admin123", 10);
+    [admin2] = await db.insert(usersTable).values({
+      name: "Alternative Admin", email: "admin2@aisync.ai", passwordHash: hash, role: "admin",
+    }).returning();
+  }
+
   // ── Employees ────────────────────────────────────────────────────────
   const allEmployees = await db.select().from(employeesTable);
   let emp1 = allEmployees.find((e) => e.email === "ibrahim@aisync.ai");
