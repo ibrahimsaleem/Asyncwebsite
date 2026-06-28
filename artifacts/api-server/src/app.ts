@@ -63,7 +63,7 @@ const frontendDistDir = path.resolve(workspaceRoot, "artifacts/aisync/dist/publi
 app.use(express.static(frontendDistDir));
 
 // Fallback for React client-side routing (Single Page Application)
-app.get("(.*)", (req, res, next) => {
+app.get(/.*/, (req, res, next) => {
   if (req.path.startsWith("/api")) {
     return next();
   }
