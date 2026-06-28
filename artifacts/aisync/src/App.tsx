@@ -34,6 +34,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/client" component={() => <ProtectedRoute role="client" component={ClientDashboard} />} />
       <Route path="/admin" component={() => <ProtectedRoute role="admin" component={AdminDashboard} />} />
+      <Route path="/buildworkflow" component={BuildWorkflowGuide} />
       <Route path="/buildworkflowgudie" component={BuildWorkflowGuide} />
       <Route path="/buildworkflowguide" component={BuildWorkflowGuide} />
       <Route component={NotFound} />
