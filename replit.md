@@ -1,36 +1,53 @@
-# [Project name]
+# Aisync
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A full-stack MVP website for Aisync — a 24/7 AI voice agent SaaS for businesses. Includes a beautiful landing page, client portal, and admin dashboard.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/aisync run dev` — run the frontend (port 23763)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string, `SESSION_SECRET` — express-session secret
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
+- Frontend: React + Vite + wouter + TanStack Query + Framer Motion + shadcn/ui
+- API: Express 5 + express-session + bcrypt + multer
+- DB: PostgreSQL (Replit built-in) + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — source of truth for all API contracts
+- `lib/db/src/schema/` — Drizzle table definitions (one file per model)
+- `artifacts/api-server/src/routes/` — Express route handlers (one file per domain)
+- `artifacts/api-server/src/lib/seed.ts` — demo seed data (runs on startup if DB is empty)
+- `artifacts/aisync/src/pages/` — Landing, Login, ClientDashboard, AdminDashboard
+- `artifacts/aisync/src/context/AuthContext.tsx` — auth state provider
+
+## Demo Credentials
+
+- Admin: `admin@aisync.ai` / `admin123`
+- Client: `client@demo.com` / `client123`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Session-based auth (express-session + bcrypt) — simple, no JWT complexity for MVP
+- Seeded demo data auto-runs on first startup if the users table is empty
+- File uploads stored on disk under `artifacts/api-server/uploads/`, served statically at `/api/uploads/`
+- OpenAPI spec is the single source of truth; never write raw fetch calls in the frontend
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Landing page: hero, problem/solution, features, how-it-works, use cases, benefits, demo request form
+- Client portal: project overview, progress timeline, team, invoice, file uploads, change requests
+- Admin dashboard: metrics, clients, projects, employees, invoices, feature requests, demo leads
 
 ## User preferences
 
@@ -38,7 +55,10 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Always run `pnpm --filter @workspace/api-spec run codegen` after changing the OpenAPI spec
+- Orval body schema names must be entity-shaped (e.g. `NoteInput`) never `CreateNoteBody` — causes TS2308
+- `bcrypt` needs native build approval: run `pnpm approve-builds` and select bcrypt
+- Numeric DB columns (`numeric` type) come back as strings from Postgres — parse with `parseFloat()` before returning
 
 ## Pointers
 
