@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aisync — From Voice Prompt to a Live, Owned Web App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --void: #0b0f17;
+            --panel: #131a26;
+            --panel-2: #1a2230;
+            --line: #283141;
+            --line-soft: #1f2733;
+            --ink: #e9eef6;
+            --muted: #8a99b3;
+            --faint: #5d6b83;
+            --volt: #5b8cff;
+            --mint: #34d399;
+            --amber: #f5b14c;
+            --ts: #4b91f7;
+            --css-c: #c46fe0;
+            --display: "Space Grotesk", system-ui, sans-serif;
+            --body: "IBM Plex Sans", system-ui, sans-serif;
+            --mono: "JetBrains Mono", ui-monospace, monospace;
+            --maxw: 900px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--void);
+            color: var(--ink);
+            font-family: var(--body);
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .wrap {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* top bar */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(11, 15, 23, .82);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--line-soft);
+        }
+
+        .topbar .wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+        }
+
+        .brand {
+            font-family: var(--mono);
+            font-size: 12.5px;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+        }
+
+        .brand b {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .brand .slash {
+            color: var(--volt);
+            margin: 0 7px;
+        }
+
+        .toplinks {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toplink {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: .5px;
+            color: var(--muted);
+            border: 1px solid var(--line);
+            padding: 6px 11px;
+            border-radius: 8px;
+            transition: border-color .2s, color .2s;
+        }
+
+        .toplink:hover {
+            color: var(--ink);
+            border-color: var(--volt);
+        }
+
+        .toplink.live {
+            color: var(--mint);
+            border-color: color-mix(in srgb, var(--mint) 35%, transparent);
+            background: color-mix(in srgb, var(--mint) 8%, transparent);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--mint);
+            animation: pulse 2.4s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 color-mix(in srgb, var(--mint) 70%, transparent);
+            }
+
+            70% {
+                box-shadow: 0 0 0 7px transparent;
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 transparent;
+            }
+        }
+
+        /* hero */
+        .hero {
+            position: relative;
+            padding: 78px 0 50px;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle at 1px 1px, rgba(91, 140, 255, .10) 1px, transparent 0);
+            background-size: 30px 30px;
+            -webkit-mask-image: linear-gradient(180deg, #000, transparent 80%);
+            mask-image: linear-gradient(180deg, #000, transparent 80%);
+        }
+
+        .hero .wrap {
+            position: relative;
+            z-index: 1;
+        }
+
+        .eyebrow {
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--volt);
+            margin: 0 0 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 26px;
+            height: 1px;
+            background: var(--volt);
+        }
+
+        h1 {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: clamp(33px, 6.2vw, 58px);
+            line-height: 1.02;
+            letter-spacing: -1.5px;
+            margin: 0 0 20px;
+        }
+
+        h1 .accent {
+            background: linear-gradient(100deg, var(--mint), #7af0c0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .lede {
+            font-size: clamp(16px, 2.3vw, 18.5px);
+            color: var(--muted);
+            max-width: 58ch;
+            margin: 0 0 30px;
+        }
+
+        .lede b {
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        /* CTAs */
+        .cta-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-family: var(--body);
+            font-weight: 600;
+            font-size: 14.5px;
+            padding: 12px 20px;
+            border-radius: 11px;
+            border: 1px solid transparent;
+            transition: transform .18s, box-shadow .2s, border-color .2s, background .2s;
+            cursor: pointer;
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--volt);
+            outline-offset: 3px;
+        }
+
+        .btn svg {
+            flex-shrink: 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #3ee0a6, #27b985);
+            color: #04261b;
+            box-shadow: 0 10px 26px -12px rgba(52, 211, 153, .7);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px -12px rgba(52, 211, 153, .85);
+        }
+
+        .btn-ghost {
+            background: var(--panel);
+            color: var(--ink);
+            border-color: var(--line);
+        }
+
+        .btn-ghost:hover {
+            transform: translateY(-2px);
+            border-color: var(--volt);
+        }
+
+        /* browser frame */
+        .browser {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden;
+            background: var(--panel);
+            box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .9);
+        }
+
+        .browser-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            background: var(--panel-2);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .tl {
+            display: flex;
+            gap: 7px;
+        }
+
+        .tl i {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: block;
+            opacity: .9;
+        }
+
+        .tl .r {
+            background: #ff5f57;
+        }
+
+        .tl .y {
+            background: #febc2e;
+        }
+
+        .tl .g {
+            background: #28c840;
+        }
+
+        .urlbar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+            background: var(--void);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 6px 12px;
+            min-width: 0;
+        }
+
+        .urlbar .lock {
+            color: var(--mint);
+        }
+
+        .urlbar .u {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .open-ext {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--mint);
+            border: 1px solid color-mix(in srgb, var(--mint) 35%, transparent);
+            padding: 5px 10px;
+            border-radius: 7px;
+            white-space: nowrap;
+            transition: background .2s;
+        }
+
+        .open-ext:hover {
+            background: color-mix(in srgb, var(--mint) 12%, transparent);
+        }
+
+        .browser-body {
+            position: relative;
+            padding: 44px 32px;
+            background: radial-gradient(120% 140% at 50% 0%, #172033, #0d121d);
+            text-align: center;
+        }
+
+        .browser-body .pill-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--mint);
+            border: 1px solid color-mix(in srgb, var(--mint) 30%, transparent);
+            padding: 5px 12px;
+            border-radius: 999px;
+            margin-bottom: 18px;
+        }
+
+        .browser-body .word {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: clamp(30px, 5vw, 44px);
+            letter-spacing: -1px;
+            margin: 0 0 8px;
+        }
+
+        .browser-body .word span {
+            color: var(--mint);
+        }
+
+        .browser-body .tag {
+            color: var(--muted);
+            font-size: 15px;
+            max-width: 44ch;
+            margin: 0 auto 22px;
+        }
+
+        .demo-chips {
+            display: flex;
+            gap: 9px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .demo-chips span {
+            font-family: var(--mono);
+            font-size: 11.5px;
+            letter-spacing: .4px;
+            color: #cdd6e4;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            padding: 7px 13px;
+            border-radius: 8px;
+        }
+
+        /* stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 34px;
+        }
+
+        .stat {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+            padding: 16px 18px;
+        }
+
+        .stat .n {
+            font-family: var(--display);
+            font-size: 25px;
+            font-weight: 700;
+            letter-spacing: -.5px;
+        }
+
+        .stat .n.mint {
+            color: var(--mint);
+        }
+
+        .stat .n.volt {
+            color: var(--volt);
+        }
+
+        .stat .n.ts {
+            color: var(--ts);
+        }
+
+        .stat .k {
+            font-family: var(--mono);
+            font-size: 9.5px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--faint);
+            margin-top: 5px;
+        }
+
+        /* sections */
+        .sec {
+            padding: 58px 0;
+        }
+
+        .sec-head {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        .sec-tag {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--volt);
+            letter-spacing: 1px;
+        }
+
+        .sec-head h2 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(22px, 3.6vw, 30px);
+            letter-spacing: -.6px;
+            margin: 0;
+        }
+
+        .idea {
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--mint);
+            border-radius: 0 14px 14px 0;
+            background: linear-gradient(100deg, color-mix(in srgb, var(--mint) 7%, var(--panel)), var(--panel));
+            padding: 26px 28px;
+            font-size: 17px;
+            line-height: 1.65;
+        }
+
+        .idea b {
+            color: var(--mint);
+            font-weight: 600;
+        }
+
+        /* pipeline */
+        .pipe {
+            position: relative;
+            padding-left: 46px;
+        }
+
+        .pipe::before {
+            content: "";
+            position: absolute;
+            left: 14px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: linear-gradient(180deg, var(--volt), var(--mint) 55%, var(--amber));
+            opacity: .45;
+        }
+
+        .stage {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .stage .node-dot {
+            position: absolute;
+            left: -39px;
+            top: 24px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--void);
+            border: 2px solid var(--volt);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stage .node-dot::after {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--volt);
+        }
+
+        .stage[data-type="own"] .node-dot,
+        .stage[data-type="ship"] .node-dot {
+            border-color: var(--mint);
+        }
+
+        .stage[data-type="own"] .node-dot::after,
+        .stage[data-type="ship"] .node-dot::after {
+            background: var(--mint);
+        }
+
+        .stage[data-type="secure"] .node-dot {
+            border-color: var(--amber);
+        }
+
+        .stage[data-type="secure"] .node-dot::after {
+            background: var(--amber);
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+            padding: 20px 24px;
+            transition: transform .25s, border-color .25s, box-shadow .25s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: color-mix(in srgb, var(--volt) 45%, var(--line));
+            box-shadow: 0 14px 34px -22px rgba(0, 0, 0, .9);
+        }
+
+        .stage[data-type="own"] .card:hover,
+        .stage[data-type="ship"] .card:hover {
+            border-color: color-mix(in srgb, var(--mint) 50%, var(--line));
+        }
+
+        .stage[data-type="secure"] .card:hover {
+            border-color: color-mix(in srgb, var(--amber) 50%, var(--line));
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .num {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--faint);
+        }
+
+        .stage h3 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 18.5px;
+            letter-spacing: -.3px;
+            margin: 0;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .pill {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            padding: 4px 9px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .pill.ai {
+            color: var(--volt);
+            background: color-mix(in srgb, var(--volt) 14%, transparent);
+        }
+
+        .pill.own,
+        .pill.ship {
+            color: var(--mint);
+            background: color-mix(in srgb, var(--mint) 14%, transparent);
+        }
+
+        .pill.secure {
+            color: var(--amber);
+            background: color-mix(in srgb, var(--amber) 14%, transparent);
+        }
+
+        .card p {
+            margin: 0 0 12px;
+            color: #cdd6e4;
+        }
+
+        .card ul {
+            margin: 0 0 12px;
+            padding-left: 20px;
+        }
+
+        .card li {
+            margin: 6px 0;
+            color: #c2ccdd;
+        }
+
+        .card li::marker {
+            color: var(--faint);
+        }
+
+        code {
+            font-family: var(--mono);
+            font-size: 12.5px;
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 1.5px 6px;
+            color: #a8c2ff;
+        }
+
+        .stage[data-type="own"] code,
+        .stage[data-type="ship"] code {
+            color: #8ce9c2;
+        }
+
+        .why {
+            display: flex;
+            gap: 11px;
+            border-radius: 9px;
+            padding: 11px 14px;
+            margin-top: 4px;
+            background: color-mix(in srgb, var(--mint) 6%, transparent);
+            border: 1px solid color-mix(in srgb, var(--mint) 22%, transparent);
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: #bfe6d3;
+        }
+
+        .why .lbl {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--mint);
+            letter-spacing: .5px;
+            flex-shrink: 0;
+            padding-top: 1px;
+        }
+
+        .loop {
+            margin: -4px 0 12px;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            letter-spacing: .5px;
+            color: var(--mint);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        /* repo panel */
+        .repo {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+            overflow: hidden;
+        }
+
+        .repo-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+
+        .repo-head .path {
+            font-family: var(--mono);
+            font-size: 14px;
+            color: var(--ink);
+        }
+
+        .repo-head .path b {
+            color: var(--volt);
+            font-weight: 700;
+        }
+
+        .repo-head .badge {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--faint);
+            border: 1px solid var(--line);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .repo-head .spacer {
+            flex: 1;
+        }
+
+        .repo-body {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 0;
+        }
+
+        .repo-col {
+            padding: 18px 20px;
+        }
+
+        .repo-col+.repo-col {
+            border-left: 1px solid var(--line);
+        }
+
+        .col-label {
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--faint);
+            margin-bottom: 12px;
+        }
+
+        .tree-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-family: var(--mono);
+            font-size: 13px;
+            color: #cbd5e6;
+            padding: 3px 0;
+        }
+
+        .tree-row svg {
+            flex-shrink: 0;
+        }
+
+        .tree-row.f {
+            color: var(--muted);
+        }
+
+        .langbar {
+            display: flex;
+            height: 9px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 13px;
+        }
+
+        .langbar i {
+            display: block;
+            height: 100%;
+        }
+
+        .langlegend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .langlegend div {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-family: var(--mono);
+            font-size: 12.5px;
+            color: var(--muted);
+        }
+
+        .langlegend b {
+            width: 9px;
+            height: 9px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .repo-meta {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .repo-meta span b {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .repo-foot {
+            padding: 14px 20px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .repo-foot .note {
+            font-size: 12.5px;
+            color: var(--amber);
+            font-family: var(--mono);
+        }
+
+        /* stack + principles */
+        .stack {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .tool {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+            padding: 18px 20px;
+            transition: border-color .2s, transform .2s;
+        }
+
+        .tool:hover {
+            transform: translateY(-2px);
+            border-color: color-mix(in srgb, var(--volt) 40%, var(--line));
+        }
+
+        .tool .stage-k {
+            font-family: var(--mono);
+            font-size: 10.5px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--faint);
+        }
+
+        .tool .name {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 18px;
+            margin: 6px 0;
+        }
+
+        .tool .role {
+            font-size: 13.5px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .principles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .prin {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--panel);
+            padding: 18px 20px;
+        }
+
+        .prin h4 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 15.5px;
+            margin: 0 0 6px;
+            color: var(--mint);
+        }
+
+        .prin p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        /* caution */
+        .caution {
+            border: 1px solid color-mix(in srgb, var(--amber) 30%, var(--line));
+            border-left: 3px solid var(--amber);
+            border-radius: 0 14px 14px 0;
+            background: linear-gradient(100deg, color-mix(in srgb, var(--amber) 8%, var(--panel)), var(--panel));
+            padding: 24px 28px;
+        }
+
+        .caution h3 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 18px;
+            margin: 0 0 14px;
+            color: var(--amber);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .caution ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .caution li {
+            margin: 9px 0;
+            color: #e4d6bb;
+            font-size: 14.5px;
+        }
+
+        .caution li::marker {
+            color: var(--amber);
+        }
+
+        .caution b {
+            color: #fbe4bd;
+            font-weight: 600;
+        }
+
+        .caution code {
+            background: color-mix(in srgb, var(--amber) 10%, transparent);
+            border-color: color-mix(in srgb, var(--amber) 30%, transparent);
+            color: #f7d9a6;
+        }
+
+        /* footer */
+        footer {
+            border-top: 1px solid var(--line-soft);
+            padding: 34px 0 60px;
+            margin-top: 24px;
+        }
+
+        footer .wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        footer .meta {
+            font-family: var(--mono);
+            font-size: 11.5px;
+            color: var(--faint);
+            letter-spacing: .5px;
+            line-height: 1.8;
+        }
+
+        footer .meta a {
+            color: var(--volt);
+        }
+
+        footer .meta a:hover {
+            text-decoration: underline;
+        }
+
+        footer .meta b {
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity .6s, transform .6s;
+        }
+
+        .reveal.in {
+            opacity: 1;
+            transform: none;
+        }
+
+        @media (max-width:680px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stack,
+            .principles {
+                grid-template-columns: 1fr;
+            }
+
+            .repo-body {
+                grid-template-columns: 1fr;
+            }
+
+            .repo-col+.repo-col {
+                border-left: none;
+                border-top: 1px solid var(--line);
+            }
+
+            .pipe {
+                padding-left: 34px;
+            }
+
+            .stage .node-dot {
+                left: -31px;
+            }
+
+            .pipe::before {
+                left: 9px;
+            }
+
+            .hero {
+                padding: 56px 0 36px;
+            }
+        }
+
+        @media (prefers-reduced-motion:reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+                scroll-behavior: auto !important;
+            }
+
+            .reveal {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">
+        <div class="wrap">
+            <div class="brand"><b>AISYNC</b><span class="slash">//</span>BUILD PIPELINE</div>
+            <div class="toplinks">
+                <a class="toplink" href="https://github.com/ibrahimsaleem/Asyncwebsite" target="_blank"
+                    rel="noopener">SOURCE</a>
+                <a class="toplink live" href="https://asyncwebsite.onrender.com/" target="_blank" rel="noopener"><span
+                        class="dot"></span>LIVE</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- HERO -->
+    <header class="hero">
+        <div class="wrap">
+            <p class="eyebrow">Team Build Playbook &middot; 28 Jun 2026</p>
+            <h1>From a voice prompt<br>to a <span class="accent">live, owned</span> web app.</h1>
+            <p class="lede">The end-to-end workflow Ibrahim ran live for the team &mdash; turning a rough idea into
+                <b>Aisync</b>, a deployed AI voice-agent SaaS the team fully controls, in about ninety minutes.</p>
+
+            <div class="cta-row">
+                <a class="btn btn-primary" href="https://asyncwebsite.onrender.com/" target="_blank" rel="noopener">
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 3l9 5-9 5V3z" fill="#04261b" />
+                    </svg>
+                    Open live demo
+                </a>
+                <a class="btn btn-ghost" href="https://github.com/ibrahimsaleem/Asyncwebsite" target="_blank"
+                    rel="noopener">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path
+                            d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.5 7.5 0 014 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.2c0 .21.15.46.55.38A8 8 0 0016 8c0-4.42-3.58-8-8-8z" />
+                    </svg>
+                    View source
+                </a>
+            </div>
+
+            <!-- live demo browser frame -->
+            <div class="browser reveal">
+                <div class="browser-bar">
+                    <div class="tl"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+                    <div class="urlbar"><span class="lock">&#128274;</span><span
+                            class="u">asyncwebsite.onrender.com</span></div>
+                    <a class="open-ext" href="https://asyncwebsite.onrender.com/" target="_blank" rel="noopener">Open
+                        &#8599;</a>
+                </div>
+                <div class="browser-body">
+                    <span class="pill-live"><span class="dot"></span>24/7 &middot; DEPLOYED ON RENDER</span>
+                    <p class="word">Ai<span>sync</span></p>
+                    <p class="tag">24/7 AI voice agent SaaS for businesses &mdash; client portal, voice agents, project
+                        timelines, and invoices.</p>
+                    <div class="demo-chips"><span>Client portal</span><span>Voice
+                            agents</span><span>Timelines</span><span>Invoices</span><span>Admin dashboard</span></div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="n mint">~90<span style="font-size:15px">min</span></div>
+                    <div class="k">Idea &rarr; Live</div>
+                </div>
+                <div class="stat">
+                    <div class="n volt">10</div>
+                    <div class="k">Pipeline Stages</div>
+                </div>
+                <div class="stat">
+                    <div class="n">11</div>
+                    <div class="k">Commits on main</div>
+                </div>
+                <div class="stat">
+                    <div class="n ts">97<span style="font-size:15px">%</span></div>
+                    <div class="k">TypeScript</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CORE IDEA -->
+    <section class="sec">
+        <div class="wrap">
+            <div class="sec-head"><span class="sec-tag">01</span>
+                <h2>The core idea</h2>
+            </div>
+            <div class="idea reveal">
+                Go from a rough idea to a fully owned, live app as fast as possible &mdash; without getting locked into
+                the tool that generated it. AI does the heavy lifting: prompt refinement, scaffolding, debugging, fixes.
+                But the <b>code, database, and hosting all end up under the team's own control</b>, so Aisync can be
+                iterated on and scaled freely afterward.
+            </div>
+        </div>
+    </section>
+
+    <!-- PIPELINE -->
+    <section class="sec" style="padding-top:6px;">
+        <div class="wrap">
+            <div class="sec-head"><span class="sec-tag">02</span>
+                <h2>The pipeline, stage by stage</h2>
+            </div>
+            <div class="pipe">
+
+                <div class="stage reveal" data-type="ai">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">01</span>
+                            <h3>Generate the build prompt</h3><span class="pill ai">AI</span>
+                        </div>
+                        <p>Start with a rough, unpolished brief. Ibrahim used voice to dump his complete thinking
+                            &mdash; not even full sentences &mdash; plus the company business deck, then asked an AI to
+                            turn it into a proper, detailed build prompt.</p>
+                        <ul>
+                            <li>Attach the deck so the AI pulls in real business context: company name, the voice-agent
+                                / receptionist product, and so on.</li>
+                            <li>State what you actually want up front &mdash; here, an <b>admin panel</b> and a separate
+                                <b>client panel</b> where clients log in to a dashboard.</li>
+                            <li>The AI returns a long, structured prompt you can hand straight to a builder.</li>
+                        </ul>
+                        <div class="why"><span class="lbl">WHY</span><span>A messy human brief becomes a precise spec.
+                                You define the architecture in raw form; the AI sharpens it into something a code
+                                generator can execute well.</span></div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="ai">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">02</span>
+                            <h3>Scaffold the full app in Replit</h3><span class="pill ai">BUILD</span>
+                        </div>
+                        <p>Paste the generated prompt into Replit and let it build the whole project. This is the step
+                            that takes the most time.</p>
+                        <ul>
+                            <li>Replit scaffolds a <b>React + TypeScript</b> front end, defines the API (OpenAPI spec),
+                                and wires a <b>Supabase</b> backend.</li>
+                            <li>You get working <b>admin and client</b> dashboards: login, onboarding, projects,
+                                invoices, file uploads, feature requests, and basic metrics.</li>
+                            <li>Some pages come out incomplete &mdash; expected, and filled in later through iteration.
+                            </li>
+                        </ul>
+                        <div class="why"><span class="lbl">WHY TS</span><span>Keep the TypeScript the AI defaults to
+                                &mdash; the repo ends up 97% TS, and that's what keeps it maintainable as it
+                                grows.</span></div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="own">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">03</span>
+                            <h3>Take ownership: run it locally</h3><span class="pill own">OWN</span>
+                        </div>
+                        <p>Don't stay trapped inside the builder. Export the project as a ZIP, extract it, and open it
+                            in an AI-assisted IDE (Antigravity) on your own machine.</p>
+                        <ul>
+                            <li>Ask the AI assistant to analyze the repo and generate run instructions for your system.
+                            </li>
+                            <li>Get it running locally so you can iterate without the builder's usage limits.</li>
+                        </ul>
+                        <div class="why"><span class="lbl">WHY</span><span>Inside the builder you're bound to its caps
+                                and limited flexibility &mdash; once tokens run out you can't add features. Owning the
+                                code removes that ceiling.</span></div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="own">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">04</span>
+                            <h3>Stand up your own database</h3><span class="pill own">OWN</span>
+                        </div>
+                        <p>Create a dedicated Supabase project so the data lives in <em>your</em> Postgres database, not
+                            the vendor-managed one.</p>
+                        <ul>
+                            <li>In the new project, open <code>Connect</code> and copy the direct connection string
+                                (direct connection / session pooler).</li>
+                            <li>Put the database URL and credentials into the app's <code>.env</code>.</li>
+                            <li>Hand the string to the AI agent; it connects and seeds the schema &mdash;
+                                <code>users</code>, <code>clients</code>, <code>employees</code>, <code>projects</code>,
+                                <code>invoices</code>, <code>uploads</code>, <code>feature_requests</code>.</li>
+                        </ul>
+                        <div class="why"><span class="lbl">WHY</span><span>Owning the database is the whole point
+                                &mdash; your data stays portable and under your control instead of locked to the
+                                builder.</span></div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="ai">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">05</span>
+                            <h3>Debug with AI using real logs</h3><span class="pill ai">AI</span>
+                        </div>
+                        <p>When something breaks &mdash; the demo hit "invalid credentials" on login &mdash; don't
+                            guess. Feed the AI the actual error.</p>
+                        <ul>
+                            <li>Open browser <b>Inspect</b> / console and copy the error.</li>
+                            <li>Paste it into the AI assistant; it diagnoses the backend issue and applies a fix.</li>
+                            <li>Retry &mdash; admin and client logins then succeeded.</li>
+                        </ul>
+                        <div class="why"><span class="lbl">WHY</span><span>Concrete console output and error screenshots
+                                make the debug-and-fix loop far faster than describing the bug in words.</span></div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="own">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">06</span>
+                            <h3>Strip branding, push to GitHub</h3><span class="pill own">OWN</span>
+                        </div>
+                        <p>Before publishing, clean the project so it's genuinely yours, then move it into your own
+                            repository.</p>
+                        <ul>
+                            <li>Create a new GitHub repo &mdash; here, <code>ibrahimsaleem/Asyncwebsite</code>.</li>
+                            <li>Prompt the AI to remove Replit branding/traces and detach from the builder's scaffold.
+                            </li>
+                            <li>Give the AI your repo link (GitHub already connected) and have it push the full code
+                                base.</li>
+                        </ul>
+                        <div class="why"><span class="lbl">WHY</span><span>The app becomes a standalone code base the
+                                whole team can pull, contribute to, and deploy. (Heads-up: the published repo still
+                                carries <code style="color:#f7d9a6">.replit</code> &amp; <code
+                                    style="color:#f7d9a6">replit.md</code> &mdash; the cleanup was only partial. See the
+                                watch-outs below.)</span></div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="ship">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">07</span>
+                            <h3>Deploy on Render</h3><span class="pill ship">DEPLOY</span>
+                        </div>
+                        <p>Render hosts the app from the GitHub repo (Ibrahim's preference &mdash; he uses it a lot).
+                            The result is live at <code>asyncwebsite.onrender.com</code>.</p>
+                        <ul>
+                            <li>Create a new <b>Web Service</b> &mdash; not static, private, or job.</li>
+                            <li>Connect GitHub; Render lists your repos &mdash; select <code>Asyncwebsite</code>.</li>
+                            <li>Fill in build and start commands.</li>
+                            <li>Add the env vars (Supabase URL / keys), then click <b>Deploy</b>.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="ship">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">08</span>
+                            <h3>Fix deploy errors, then automate</h3><span class="pill ship">DEPLOY</span>
+                        </div>
+                        <p>First deploys often fail. Treat each failure as just another log to hand to the AI.</p>
+                        <ul>
+                            <li>Copy the failed deployment log from Render (a screenshot helps too) and paste it into
+                                the AI.</li>
+                            <li>The AI finds the issue, fixes the code, and pushes to GitHub.</li>
+                            <li>Render detects the new commit and auto-deploys. Repeat until the site is live.</li>
+                        </ul>
+                        <div class="loop">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M13 7A5 5 0 1 0 11.5 11" stroke="#34d399" stroke-width="1.6"
+                                    stroke-linecap="round" />
+                                <path d="M13 3.5V7H9.5" stroke="#34d399" stroke-width="1.6" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            commit &rarr; Render auto-deploys &rarr; live link updates
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="ai">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">09</span>
+                            <h3>Iterate features through prompts</h3><span class="pill ai">BUILD</span>
+                        </div>
+                        <p>With the pipeline live, adding features is just more prompting. Ibrahim demoed a light/dark
+                            theme and a rewritten landing page.</p>
+                        <ul>
+                            <li>Prompt the change &rarr; AI edits the code &rarr; pushes to GitHub &rarr; Render
+                                auto-deploys.</li>
+                            <li>Ideas on the table: charts/graphs, an ROI calculator, a more polished landing page.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="stage reveal" data-type="secure">
+                    <div class="node-dot"></div>
+                    <div class="card">
+                        <div class="card-top"><span class="num">10</span>
+                            <h3>Harden security before scaling</h3><span class="pill secure">SECURE</span>
+                        </div>
+                        <p>Fine for internal use as-is, but before opening it to many users, run a security pass.</p>
+                        <ul>
+                            <li>In the AI IDE, ask for a <b>complete security review</b> and an audit report, then fix
+                                the issues step by step.</li>
+                            <li>Make sure <b>API endpoints</b> are secured &mdash; front-end protections don't cover
+                                backend data exposed through the API.</li>
+                            <li>In Supabase, turn on <b>table / column-level security (RLS)</b>. Supabase handles a lot,
+                                but these settings still need to be switched on.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- THE REPO, FOR REAL -->
+    <section class="sec" style="padding-top:0;">
+        <div class="wrap">
+            <div class="sec-head"><span class="sec-tag">03</span>
+                <h2>The repo, for real</h2>
+            </div>
+            <div class="repo reveal">
+                <div class="repo-head">
+                    <svg width="17" height="17" viewBox="0 0 16 16" fill="#8a99b3">
+                        <path
+                            d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5z" />
+                    </svg>
+                    <span class="path">ibrahimsaleem / <b>Asyncwebsite</b></span>
+                    <span class="badge">Public</span>
+                    <span class="badge">main</span>
+                    <span class="spacer"></span>
+                    <a class="open-ext" href="https://github.com/ibrahimsaleem/Asyncwebsite" target="_blank"
+                        rel="noopener">Browse &#8599;</a>
+                </div>
+                <div class="repo-body">
+                    <div class="repo-col">
+                        <div class="col-label">// project structure</div>
+                        <div class="tree-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5b8cff">
+                                <path
+                                    d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V4.75A1.75 1.75 0 0014.25 3H7.5L6.2 1.6A1.75 1.75 0 004.93 1H1.75z" />
+                            </svg>artifacts/</div>
+                        <div class="tree-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5b8cff">
+                                <path
+                                    d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V4.75A1.75 1.75 0 0014.25 3H7.5L6.2 1.6A1.75 1.75 0 004.93 1H1.75z" />
+                            </svg>attached_assets/</div>
+                        <div class="tree-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5b8cff">
+                                <path
+                                    d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V4.75A1.75 1.75 0 0014.25 3H7.5L6.2 1.6A1.75 1.75 0 004.93 1H1.75z" />
+                            </svg>lib/</div>
+                        <div class="tree-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5b8cff">
+                                <path
+                                    d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V4.75A1.75 1.75 0 0014.25 3H7.5L6.2 1.6A1.75 1.75 0 004.93 1H1.75z" />
+                            </svg>scripts/</div>
+                        <div class="tree-row f"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5d6b83">
+                                <path
+                                    d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75z" />
+                            </svg>package.json</div>
+                        <div class="tree-row f"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5d6b83">
+                                <path
+                                    d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75z" />
+                            </svg>pnpm-workspace.yaml</div>
+                        <div class="tree-row f"><svg width="14" height="14" viewBox="0 0 16 16" fill="#5d6b83">
+                                <path
+                                    d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75z" />
+                            </svg>tsconfig.json</div>
+                        <div class="tree-row f" style="color:#f5b14c;"><svg width="14" height="14" viewBox="0 0 16 16"
+                                fill="#f5b14c">
+                                <path
+                                    d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0113.25 16h-9.5A1.75 1.75 0 012 14.25V1.75z" />
+                            </svg>.replit, replit.md</div>
+                    </div>
+                    <div class="repo-col">
+                        <div class="col-label">// languages</div>
+                        <div class="langbar"><i style="width:97.3%;background:var(--ts);"></i><i
+                                style="width:1.4%;background:var(--css-c);"></i><i
+                                style="width:1.3%;background:#5d6b83;"></i></div>
+                        <div class="langlegend">
+                            <div><b style="background:var(--ts);"></b>TypeScript&nbsp;<span
+                                    style="color:var(--ink)">97.3%</span></div>
+                            <div><b style="background:var(--css-c);"></b>CSS&nbsp;<span
+                                    style="color:var(--ink)">1.4%</span></div>
+                            <div><b style="background:#5d6b83;"></b>Other&nbsp;<span
+                                    style="color:var(--ink)">1.3%</span></div>
+                        </div>
+                        <div class="repo-meta">
+                            <span><b>11</b> commits on <b>main</b></span>
+                            <span>Package manager: <b>pnpm</b> workspace</span>
+                            <span>Stack: React &middot; TypeScript &middot; Supabase</span>
+                            <span>Deploy: <b>Render</b> &rarr; asyncwebsite.onrender.com</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="repo-foot">
+                    <span class="note">&#9888; Still contains <code style="color:#f7d9a6">.replit</code>, <code
+                            style="color:#f7d9a6">.replitignore</code>, <code style="color:#f7d9a6">replit.md</code>
+                        &mdash; branding cleanup unfinished.</span>
+                    <a class="btn btn-ghost" style="padding:9px 16px;font-size:13.5px;"
+                        href="https://github.com/ibrahimsaleem/Asyncwebsite" target="_blank" rel="noopener">Open
+                        repository &#8599;</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STACK -->
+    <section class="sec" style="padding-top:0;">
+        <div class="wrap">
+            <div class="sec-head"><span class="sec-tag">04</span>
+                <h2>The stack</h2>
+            </div>
+            <div class="stack">
+                <div class="tool reveal">
+                    <div class="stage-k">Prompt &amp; spec</div>
+                    <div class="name">AI + voice + deck</div>
+                    <div class="role">Turns a rough brief into a precise build prompt.</div>
+                </div>
+                <div class="tool reveal">
+                    <div class="stage-k">Scaffold</div>
+                    <div class="name">Replit</div>
+                    <div class="role">Generates the React + TypeScript app and Supabase backend.</div>
+                </div>
+                <div class="tool reveal">
+                    <div class="stage-k">Local dev / AI assist</div>
+                    <div class="name">Antigravity IDE</div>
+                    <div class="role">Run locally, analyze the repo, debug, fix, and push code.</div>
+                </div>
+                <div class="tool reveal">
+                    <div class="stage-k">Database</div>
+                    <div class="name">Supabase</div>
+                    <div class="role">Owned Postgres; schema seeding; RLS security.</div>
+                </div>
+                <div class="tool reveal">
+                    <div class="stage-k">Source control</div>
+                    <div class="name">GitHub</div>
+                    <div class="role">Owns the code base; collaboration; deploy source.</div>
+                </div>
+                <div class="tool reveal">
+                    <div class="stage-k">Hosting / CI-CD</div>
+                    <div class="name">Render</div>
+                    <div class="role">Auto-deploys the web service on every commit.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRINCIPLES -->
+    <section class="sec" style="padding-top:0;">
+        <div class="wrap">
+            <div class="sec-head"><span class="sec-tag">05</span>
+                <h2>Principles to carry forward</h2>
+            </div>
+            <div class="principles">
+                <div class="prin reveal">
+                    <h4>Own every layer</h4>
+                    <p>Code, database, and hosting under your control. The builder is a starting point, not a
+                        dependency.</p>
+                </div>
+                <div class="prin reveal">
+                    <h4>Let AI work from evidence</h4>
+                    <p>Paste real console logs, deploy logs, and error screenshots rather than describing problems. It
+                        fixes faster.</p>
+                </div>
+                <div class="prin reveal">
+                    <h4>Keep the deploy loop hands-off</h4>
+                    <p>Commit &rarr; auto-deploy. Set it up once, then iterate purely through prompts.</p>
+                </div>
+                <div class="prin reveal">
+                    <h4>Keep TypeScript</h4>
+                    <p>Accept the AI's TS scaffold &mdash; here it's 97% of the repo &mdash; for maintainability and
+                        scale.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CAUTION -->
+    <section class="sec" style="padding-top:0;">
+        <div class="wrap">
+            <div class="caution reveal">
+                <h3>&#9888; Worth flagging for the team</h3>
+                <ul>
+                    <li><b>Finish the branding cleanup.</b> The public repo still ships <code>.replit</code>,
+                        <code>.replitignore</code>, and <code>replit.md</code>. For a public portfolio piece, remove the
+                        builder scaffolding so the project reads as fully your own.</li>
+                    <li><b>An AI security audit is a starting point, not a sign-off.</b> Automated reviews routinely
+                        miss broken authorization, IDOR (one user reading another's records), and business-logic flaws.
+                        Before scaling, have a person review API endpoint authorization and confirm Supabase RLS
+                        actually enforces per-user access.</li>
+                    <li><b>"Fix it without reading the error" works for speed, not for production.</b> The rapid
+                        copy-log-paste-fix loop is great for a demo; for a real release, at least skim what changed so
+                        silent regressions don't slip in.</li>
+                    <li><b>Mind the free Render tier.</b> The live instance spins down when idle, so the first visit can
+                        take ~30&ndash;50s to wake. Worth noting before sharing the link with clients.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="wrap">
+            <div class="meta">
+                <b>Live:</b> <a href="https://asyncwebsite.onrender.com/" target="_blank"
+                    rel="noopener">asyncwebsite.onrender.com</a><br>
+                <b>Source:</b> <a href="https://github.com/ibrahimsaleem/Asyncwebsite" target="_blank"
+                    rel="noopener">github.com/ibrahimsaleem/Asyncwebsite</a><br>
+                <b>Session:</b> AISync / BXB Analytics team build demo &middot; 28 Jun 2026 &middot; Mohd Ibrahim Saleem
+            </div>
+            <div class="brand"><b>AISYNC</b><span class="slash">//</span>BUILD PIPELINE</div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var els = document.querySelectorAll('.reveal');
+            if (reduce || !('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+            }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+            els.forEach(function (e) { io.observe(e); });
+        })();
+    </script>
+</body>
+
+</html>

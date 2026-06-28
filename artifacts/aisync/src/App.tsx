@@ -9,6 +9,7 @@ import Login from "@/pages/Login";
 import ClientDashboard from "@/pages/ClientDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import { ThemeProvider } from "next-themes";
+import BuildWorkflowGuide from "@/pages/BuildWorkflowGuide";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/client" component={() => <ProtectedRoute role="client" component={ClientDashboard} />} />
       <Route path="/admin" component={() => <ProtectedRoute role="admin" component={AdminDashboard} />} />
+      <Route path="/buildworkflowgudie" component={BuildWorkflowGuide} />
+      <Route path="/buildworkflowguide" component={BuildWorkflowGuide} />
       <Route component={NotFound} />
     </Switch>
   );
