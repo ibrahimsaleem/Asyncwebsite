@@ -78,6 +78,27 @@ const fadeInUp = {
   transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
 };
 
+const fadeInLeft = {
+  initial: { opacity: 0, x: -50 },
+  whileInView: { opacity: 1, x: 0 },
+  viewport: { once: true, margin: "-100px" },
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+};
+
+const fadeInRight = {
+  initial: { opacity: 0, x: 50 },
+  whileInView: { opacity: 1, x: 0 },
+  viewport: { once: true, margin: "-100px" },
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+};
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.88 },
+  whileInView: { opacity: 1, scale: 1 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] }
+};
+
 const staggerContainer = {
   initial: {},
   whileInView: {
@@ -96,6 +117,17 @@ const staggerItem = {
     transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } 
   }
 };
+
+// Floating animation component
+function FloatingOrb({ className, delay = 0 }: { className?: string; delay?: number }) {
+  return (
+    <motion.div
+      className={`absolute rounded-full pointer-events-none ${className}`}
+      animate={{ y: [0, -18, 0], x: [0, 8, 0], scale: [1, 1.06, 1] }}
+      transition={{ duration: 6, repeat: Infinity, delay, ease: "easeInOut" }}
+    />
+  );
+}
 
 export default function Landing() {
   const [formData, setFormData] = useState({
@@ -409,6 +441,56 @@ export default function Landing() {
         </div>
       </motion.section>
 
+      {/* ===== VOICE AGENT SHOWCASE ===== */}
+      <section className="relative overflow-hidden">
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-24">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <motion.div {...fadeInLeft}>
+              <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Powered by advanced AI</span>
+              <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-5">
+                A voice that <span className="italic text-[#B8502E]">feels</span> real.
+              </h2>
+              <p className="text-[17px] text-[#564C40] leading-[1.6] mb-8 max-w-[420px]">
+                Aisync combines neural speech synthesis with real-time intent understanding to deliver conversations that are indistinguishable from a trained human receptionist.
+              </p>
+              <div className="flex flex-col gap-4">
+                {[
+                  { icon: "🎙️", text: "Ultra-low latency voice engine with natural breathing" },
+                  { icon: "🧠", text: "Context-aware dialogue that adapts to caller intent" },
+                  { icon: "⚡", text: "Sub-300ms response time — no awkward pauses" }
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex items-start gap-3.5 bg-[#FFFDF9] border border-[#E9DFCE] rounded-xl px-5 py-4 shadow-sm transform-gpu"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ x: 6, boxShadow: "0 8px 24px -8px rgba(33,28,22,0.1)" }}
+                  >
+                    <span className="text-xl mt-0.5">{item.icon}</span>
+                    <span className="text-[15px] text-[#3A322A] font-medium leading-[1.45]">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div className="relative" {...fadeInRight}>
+              <FloatingOrb className="w-32 h-32 bg-[#B8502E]/8 -top-8 -right-8 blur-2xl" delay={0} />
+              <FloatingOrb className="w-24 h-24 bg-[#E6C9B4]/20 bottom-4 -left-6 blur-xl" delay={2} />
+              <motion.img
+                src={`${baseUrl}/images/hero_voice_agent.png`}
+                alt="AI Voice Agent"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-[0_32px_64px_-24px_rgba(33,28,22,0.35)] border border-[#E9DFCE] relative z-10"
+                whileHover={{ scale: 1.02, rotate: 0.5 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== FEATURES ===== */}
       <section style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
         <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
@@ -483,6 +565,82 @@ export default function Landing() {
         </motion.div>
       </section>
 
+      {/* ===== DASHBOARD PREVIEW ===== */}
+      <section style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9] relative overflow-hidden">
+        <FloatingOrb className="w-40 h-40 bg-[#B8502E]/6 top-12 right-12 blur-3xl" delay={1} />
+        <FloatingOrb className="w-28 h-28 bg-[#E6C9B4]/15 bottom-20 left-8 blur-2xl" delay={3} />
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-24">
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-10 lg:gap-16 items-center">
+            <motion.div className="relative order-2 lg:order-1" {...scaleIn}>
+              <motion.img
+                src={`${baseUrl}/images/dashboard_preview.png`}
+                alt="Aisync Dashboard"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-[0_40px_80px_-28px_rgba(33,28,22,0.4)] border border-[#E9DFCE] relative z-10"
+                whileHover={{ scale: 1.015, y: -4 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              />
+              {/* Floating stat badges */}
+              <motion.div
+                className="absolute -top-4 -right-4 bg-[#211C16] text-[#F6F1E9] rounded-xl px-4 py-3 shadow-lg z-20"
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, type: "spring", stiffness: 300, damping: 20 }}
+                animate={{ y: [0, -6, 0] }}
+              >
+                <div className="text-[11px] text-[#E0A98A] font-bold tracking-wider uppercase">Today</div>
+                <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[28px] leading-none mt-1">47</div>
+                <div className="text-[11px] text-[#C6BBAC]">calls handled</div>
+              </motion.div>
+              <motion.div
+                className="absolute -bottom-4 -left-4 bg-[#FFFDF9] border border-[#E9DFCE] rounded-xl px-4 py-3 shadow-lg z-20"
+                initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.6, type: "spring", stiffness: 300, damping: 20 }}
+                animate={{ y: [0, 5, 0] }}
+              >
+                <div className="text-[11px] text-[#B8502E] font-bold tracking-wider uppercase">Conversion</div>
+                <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[28px] leading-none mt-1 text-[#211C16]">94%</div>
+                <div className="text-[11px] text-[#6B6155]">booking rate</div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div className="order-1 lg:order-2" {...fadeInRight}>
+              <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Your command center</span>
+              <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-5">
+                Every call, one <span className="italic text-[#B8502E]">dashboard</span>.
+              </h2>
+              <p className="text-[17px] text-[#564C40] leading-[1.6] mb-8 max-w-[400px]">
+                See live transcripts, booking confirmations, caller sentiment, and performance analytics — all in real time.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { num: "47", label: "Calls today" },
+                  { num: "94%", label: "Booking rate" },
+                  { num: "12s", label: "Avg handle time" },
+                  { num: "4.9★", label: "Caller rating" }
+                ].map((stat, i) => (
+                  <motion.div
+                    key={i}
+                    className="bg-[#FFFDF9] border border-[#E9DFCE] rounded-xl px-4 py-3.5 shadow-sm"
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08, duration: 0.5 }}
+                    whileHover={{ y: -3, boxShadow: "0 12px 28px -8px rgba(33,28,22,0.1)" }}
+                  >
+                    <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[26px] text-[#B8502E] leading-none">{stat.num}</div>
+                    <div className="text-[12px] text-[#6B6155] mt-1.5 font-medium">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ===== USE CASES ===== */}
       <section id="uses" style={{ background: "#211C16", color: "#F6F1E9" }}>
         <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
@@ -522,6 +680,29 @@ export default function Landing() {
                 <p className="text-[14px] text-[#C6BBAC] leading-[1.6] m-0">{use.desc}</p>
               </motion.div>
             ))}
+          </motion.div>
+          {/* Mic graphic accent inside use cases */}
+          <motion.div className="mt-14 flex flex-col md:flex-row items-center gap-8" {...fadeInUp}>
+            <motion.img
+              src={`${baseUrl}/images/mic_graphic.png`}
+              alt="Voice AI Microphone"
+              loading="lazy"
+              className="w-32 h-32 md:w-40 md:h-40 rounded-2xl border border-[#3A322A] shadow-lg object-cover"
+              whileHover={{ rotate: 3, scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 250, damping: 18 }}
+            />
+            <div>
+              <p style={{ fontFamily: "'Newsreader', serif" }} className="text-[22px] sm:text-[26px] italic text-[#E0A98A] leading-[1.35] mb-3">
+                "We went from missing 40% of calls to catching every single one."
+              </p>
+              <div className="flex items-center gap-3">
+                <img src={`${baseUrl}/images/avatar_1.png`} alt="Dr. Sarah" className="w-10 h-10 rounded-full border-2 border-[#3A322A] object-cover" />
+                <div>
+                  <div className="text-[14px] font-bold text-[#F6F1E9]">Dr. Sarah Mitchell</div>
+                  <div className="text-[12px] text-[#9A8F7E]">Bright Smile Dental</div>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -630,6 +811,71 @@ export default function Landing() {
           </div>
         </div>
       </motion.section>
+
+      {/* ===== AI TECHNOLOGY SHOWCASE ===== */}
+      <section className="relative overflow-hidden">
+        <FloatingOrb className="w-48 h-48 bg-[#B8502E]/5 -top-12 left-1/3 blur-3xl" delay={0.5} />
+        <FloatingOrb className="w-36 h-36 bg-[#E6C9B4]/10 bottom-8 right-16 blur-2xl" delay={2.5} />
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-24">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <motion.div {...fadeInLeft}>
+              <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Under the hood</span>
+              <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-5">
+                Intelligence that <span className="italic text-[#B8502E]">learns</span>.
+              </h2>
+              <p className="text-[17px] text-[#564C40] leading-[1.6] mb-8 max-w-[420px]">
+                Built on transformer-based language models fine-tuned for phone conversations, your agent improves with every call it handles.
+              </p>
+              <div className="space-y-4">
+                {[
+                  { label: "Speech Recognition", value: 98 },
+                  { label: "Intent Accuracy", value: 96 },
+                  { label: "Caller Satisfaction", value: 94 }
+                ].map((bar, i) => (
+                  <div key={i}>
+                    <div className="flex justify-between text-[13px] mb-1.5">
+                      <span className="font-semibold text-[#3A322A]">{bar.label}</span>
+                      <span className="font-bold text-[#B8502E]">{bar.value}%</span>
+                    </div>
+                    <div className="h-2 bg-[#E4D9C9] rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ background: "linear-gradient(90deg, #B8502E, #E0A98A)" }}
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${bar.value}%` }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.3 + i * 0.15, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div className="relative" {...scaleIn}>
+              <motion.img
+                src={`${baseUrl}/images/ai_brain_network.png`}
+                alt="AI Neural Network"
+                loading="lazy"
+                className="w-full rounded-2xl shadow-[0_36px_72px_-28px_rgba(33,28,22,0.35)] border border-[#E9DFCE]"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+              />
+              <motion.img
+                src={`${baseUrl}/images/agent_conversation.png`}
+                alt="Agent Conversation Flow"
+                loading="lazy"
+                className="absolute -bottom-8 -left-8 w-2/5 rounded-xl shadow-xl border border-[#E9DFCE] z-10"
+                initial={{ opacity: 0, x: -20, y: 20 }}
+                whileInView={{ opacity: 1, x: 0, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ scale: 1.05, rotate: -2 }}
+              />
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
       {/* ===== PRICING ===== */}
       <section id="pricing" style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
