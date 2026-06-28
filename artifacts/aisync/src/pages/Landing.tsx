@@ -147,9 +147,6 @@ export default function Landing() {
   const [dealValue, setDealValue] = useState(150);
   const [conversionRate, setConversionRate] = useState(30);
 
-  // Pricing state
-  const [isAnnual, setIsAnnual] = useState(false);
-
   // FAQ state
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -186,14 +183,8 @@ export default function Landing() {
   // ROI computations
   const recoveredLeads = Math.round(missedCalls * (conversionRate / 100));
   const revenueRecovered = recoveredLeads * dealValue;
-  const aisyncCost = 149; // Growth plan price
+  const aisyncCost = 149; // Baseline cost estimate
   const roiMultiplier = revenueRecovered > 0 ? (revenueRecovered / aisyncCost).toFixed(1) : "0";
-
-  // Pricing values based on toggle
-  const starterPrice = isAnnual ? "39" : "49";
-  const growthPrice = isAnnual ? "119" : "149";
-  const starterNote = isAnnual ? "Billed annually ($468/yr)" : "Billed month-to-month";
-  const growthNote = isAnnual ? "Billed annually ($1,428/yr)" : "Billed month-to-month";
 
   const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -212,15 +203,14 @@ export default function Landing() {
             <a href="#how" className="hover:text-[#211C16] transition-colors duration-200">How it works</a>
             <a href="#uses" className="hover:text-[#211C16] transition-colors duration-200">Use cases</a>
             <a href="#roi" className="hover:text-[#211C16] transition-colors duration-200">ROI</a>
-            <a href="#pricing" className="hover:text-[#211C16] transition-colors duration-200">Pricing</a>
             <Link href="/login" className="hover:text-[#211C16] transition-colors duration-200">Client login</Link>
-            <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">Book a demo</a>
+            <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">Request Custom Agent</a>
           </div>
 
           {/* Simple Mobile Nav Trigger */}
           <div className="md:hidden flex items-center gap-3">
             <Link href="/login" className="text-xs font-semibold text-[#6B6155] px-2 py-1">Login</Link>
-            <a href="#demo" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Book Demo</a>
+            <a href="#demo" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Request Agent</a>
           </div>
         </div>
       </nav>
@@ -806,7 +796,7 @@ export default function Landing() {
             </div>
 
             <a href="#demo" className="mt-8 block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#8f391e] transition-all duration-300 transform hover:scale-[1.01]">
-              Recapture this revenue
+              Build your custom agent
             </a>
           </div>
         </div>
@@ -877,155 +867,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ===== PRICING ===== */}
-      <section id="pricing" style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
-        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
-          
-          <motion.div className="text-center mb-11" {...fadeInUp}>
-            <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Simple plans</span>
-            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-6">
-              Pricing that scales with your phone.
-            </h2>
-            
-            {/* Toggle Billing */}
-            <div className="inline-flex items-center gap-1 bg-[#E4D9C9] p-1 rounded-full">
-              <button
-                onClick={() => setIsAnnual(false)}
-                style={{
-                  padding: "9px 18px",
-                  border: "none",
-                  borderRadius: "999px",
-                  background: !isAnnual ? "#211C16" : "transparent",
-                  color: !isAnnual ? "#F6F1E9" : "#6B6155",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontFamily: "'Hanken Grotesk', sans-serif"
-                }}
-                className="transition-all duration-200"
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setIsAnnual(true)}
-                style={{
-                  padding: "9px 18px",
-                  border: "none",
-                  borderRadius: "999px",
-                  background: isAnnual ? "#211C16" : "transparent",
-                  color: isAnnual ? "#F6F1E9" : "#6B6155",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontFamily: "'Hanken Grotesk', sans-serif"
-                }}
-                className="transition-all duration-200"
-              >
-                Annual · save 20%
-              </button>
-            </div>
-          </motion.div>
 
-          <motion.div 
-            className="grid lg:grid-cols-3 gap-5 items-stretch"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="whileInView"
-          >
-            {/* Starter Plan */}
-            <motion.div 
-              style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} 
-              className="rounded-2xl p-[34px] flex flex-col justify-between shadow-sm transform-gpu"
-              variants={staggerItem}
-              whileHover={{ y: -5 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <div>
-                <span className="text-[12px] tracking-[0.12em] uppercase text-[#6B6155] font-bold">Starter</span>
-                <div className="flex items-baseline gap-1.5 mt-[18px] mb-1">
-                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] leading-none">${starterPrice}</span>
-                  <span className="text-[14px] text-[#6B6155]">/ mo</span>
-                </div>
-                <span className="text-[12px] text-[#9A8F7E] block mb-6">{starterNote}</span>
-                <div className="h-px bg-[#EFE7D8] mb-[22px]"></div>
-                
-                <ul className="list-none p-0 m-[0_0_28px] flex flex-col gap-3 text-[14px] text-[#564C40]">
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> 200 call minutes / month</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> 1 custom AI voice agent</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Standard voice engine</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Web booking dashboard</li>
-                </ul>
-              </div>
-
-              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">
-                Get started
-              </a>
-            </motion.div>
-
-            {/* Growth Plan (Popular) */}
-            <motion.div 
-              className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[34px] flex flex-col justify-between relative shadow-lg transform-gpu"
-              variants={staggerItem}
-              whileHover={{ y: -7 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <span style={{ fontFamily: "'Newsreader', serif" }} className="absolute top-6 right-6 italic text-[14px] text-[#E0A98A]">Most popular</span>
-              <div>
-                <span className="text-[12px] tracking-[0.12em] uppercase text-[#E0A98A] font-bold">Growth</span>
-                <div className="flex items-baseline gap-1.5 mt-[18px] mb-1">
-                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] leading-none text-[#F6F1E9]">${growthPrice}</span>
-                  <span className="text-[14px] text-[#C6BBAC]">/ mo</span>
-                </div>
-                <span className="text-[12px] text-[#9A8F7E] block mb-6">{growthNote}</span>
-                <div className="h-px bg-[#3A322A] mb-[22px]"></div>
-                
-                <ul className="list-none p-0 m-[0_0_28px] flex flex-col gap-3 text-[14px] text-[#D8CFC2]">
-                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> 800 call minutes / month</li>
-                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> Up to 3 AI voice agents</li>
-                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> Premium voice library</li>
-                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> SMS &amp; email follow-ups</li>
-                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> Google &amp; Outlook sync</li>
-                </ul>
-              </div>
-
-              <a href="#demo" className="mt-auto block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[14px] hover:bg-[#8f391e] transition-all duration-300">
-                Get started today
-              </a>
-            </motion.div>
-
-            {/* Enterprise Plan */}
-            <motion.div 
-              style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} 
-              className="rounded-2xl p-[34px] flex flex-col justify-between shadow-sm transform-gpu"
-              variants={staggerItem}
-              whileHover={{ y: -5 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <div>
-                <span className="text-[12px] tracking-[0.12em] uppercase text-[#6B6155] font-bold">Enterprise</span>
-                <div className="flex items-baseline mt-[18px] mb-1">
-                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] leading-none">Custom</span>
-                </div>
-                <span className="text-[12px] text-[#9A8F7E] block mb-6">Tailored to your scale</span>
-                <div className="h-px bg-[#EFE7D8] mb-[22px]"></div>
-                
-                <ul className="list-none p-0 m-[0_0_28px] flex flex-col gap-3 text-[14px] text-[#564C40]">
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Unlimited call volume</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Custom voice cloning</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Dedicated account manager</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> API &amp; webhook integration</li>
-                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Custom SLA &amp; infrastructure</li>
-                </ul>
-              </div>
-
-              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">
-                Contact sales
-              </a>
-            </motion.div>
-          </motion.div>
-
-        </div>
-      </section>
 
       {/* ===== FAQ ===== */}
       <section id="faq" className="max-w-[760px] mx-auto px-6 md:px-14 py-16 md:py-20">
@@ -1059,8 +901,8 @@ export default function Landing() {
               a: "It gracefully takes a message, transfers to a human, or schedules a callback — and sends you an immediate summary of the conversation by email or SMS."
             },
             {
-              q: "Is there a contract, or can I cancel anytime?",
-              a: "Starter and Growth are month-to-month — cancel or change plans anytime, no penalty. Annual billing is available if you'd like to lock in savings."
+              q: "How is the custom voice agent priced?",
+              a: "Our custom voice receptionists are priced based on the complexity of your workflow and monthly call volume. Submit a request to get a tailored estimate, and we'll call you directly to discuss details."
             }
           ].map((faq, idx) => (
             <motion.div key={idx} className="border-t border-[#E4D9C9] last:border-b last:border-[#E4D9C9]" variants={staggerItem}>
@@ -1101,23 +943,23 @@ export default function Landing() {
             
             {/* Demo Side Info */}
             <motion.div {...fadeInUp}>
-              <span className="text-[12px] tracking-[0.16em] uppercase text-[#E0A98A] font-bold">Book your demo</span>
+              <span className="text-[12px] tracking-[0.16em] uppercase text-[#E0A98A] font-bold">Custom Voice Agent</span>
               <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[52px] leading-[1.04] mt-[18px] mb-[22px] text-[#F6F1E9]">
-                Hear your own agent answer a call.
+                Request your custom built agent.
               </h2>
               <p className="text-[17px] text-[#C6BBAC] leading-[1.6] mb-8 max-w-[380px]">
-                Tell us a little about your business and we'll set up a live demo tuned to your industry — usually within a day.
+                Tell us a little about your business and workflow. We will custom-build a prototype, call you to explain how it works, and show you exactly what it can do for your business.
               </p>
               
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-[15px] text-[#D8CFC2]">
-                  <span className="text-[#E0A98A] font-bold">—</span> A real call you can listen to
+                  <span className="text-[#E0A98A] font-bold">—</span> Custom built for your specific workflow
                 </div>
                 <div className="flex items-center gap-3 text-[15px] text-[#D8CFC2]">
-                  <span className="text-[#E0A98A] font-bold">—</span> Set up for your use case
+                  <span className="text-[#E0A98A] font-bold">—</span> We call you to explain and show details
                 </div>
                 <div className="flex items-center gap-3 text-[15px] text-[#D8CFC2]">
-                  <span className="text-[#E0A98A] font-bold">—</span> No commitment, no card
+                  <span className="text-[#E0A98A] font-bold">—</span> Fully integrated with your existing tools
                 </div>
               </div>
             </motion.div>
@@ -1136,10 +978,10 @@ export default function Landing() {
                 >
                   <span className="w-14 h-14 rounded-full bg-[#F0F6F1] border border-[#D6E7DA] text-[#4F9D69] flex items-center justify-center text-[26px]">✓</span>
                   <h3 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[32px] text-[#211C16] mt-[22px] mb-2.5">
-                    You're on the list.
+                    Request Submitted.
                   </h3>
                   <p className="text-[15px] text-[#6B6155] leading-[1.55] m-0 max-w-[320px]">
-                    Thanks — we'll be in touch shortly to schedule your live demo.
+                    Thank you! Our team will call you at the provided number to explain how we can build this voice agent for your business.
                   </p>
                 </motion.div>
               ) : (
@@ -1215,12 +1057,12 @@ export default function Landing() {
                   </div>
 
                   <div>
-                    <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Anything we should know?</label>
+                    <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">What should your voice agent do?</label>
                     <textarea
                       rows={3}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="We miss a lot of calls during lunch..."
+                      placeholder="Describe your ideal agent (e.g., answer FAQs, route calls, schedule appointments using Jane App)..."
                       style={{ border: "1px solid #E4D9C9", background: "#F6F1E9", resize: "vertical" }}
                       className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
                     />
@@ -1230,7 +1072,7 @@ export default function Landing() {
                     type="submit"
                     className="bg-[#211C16] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] cursor-pointer hover:bg-[#B8502E] transition-all duration-300 mt-2"
                   >
-                    Request my demo
+                    Submit Agent Request
                   </button>
                 </form>
               )}
