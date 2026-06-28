@@ -51,6 +51,9 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
   --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif-title: 'Instrument Serif', serif;
+  --font-serif-body: 'Newsreader', serif;
+  --font-sans-grotesk: 'Hanken Grotesk', sans-serif;
   --radius: 0.5rem;
 }
 
@@ -127,3 +130,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes wv {
+  0%, 100% { transform: scaleY(0.32); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes blip {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.animate-wv {
+  animation: wv 1.1s infinite;
+}
+
+.animate-blip {
+  animation: blip 1.6s infinite;
+}
+

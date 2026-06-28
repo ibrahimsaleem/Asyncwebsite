@@ -2,11 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { useCreateDemoRequest } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
 import { 
-  Sun, Moon, Phone, Calendar, ArrowRight, Play, Check, 
-  Sparkles, TrendingUp, Zap, Clock, Shield, ChevronDown, 
-  CheckCircle2, Volume2, Star, ArrowUpRight, MessageSquare, Info
+  Volume2, Play, CheckCircle2, ChevronDown, Check, Star, ArrowRight, Pause
 } from "lucide-react";
 
 interface TranscriptLine {
@@ -18,6 +15,7 @@ interface CallPreset {
   industry: string;
   emoji: string;
   agentRole: string;
+  statusText: string;
   dialogue: TranscriptLine[];
 }
 
@@ -26,74 +24,58 @@ const PRESETS: CallPreset[] = [
     industry: "Clinics",
     emoji: "🦷",
     agentRole: "Dental Receptionist",
+    statusText: "Booked Tue 4:30 · confirmation texted",
     dialogue: [
-      { speaker: "caller", text: "Hi, I need to book a dental checkup for next Tuesday afternoon." },
-      { speaker: "agent", text: "Hello! I can definitely help with that. Let's see... we have openings at 2:00 PM and 4:30 PM next Tuesday. Which of those works better for you?" },
-      { speaker: "caller", text: "4:30 PM is perfect for me." },
-      { speaker: "agent", text: "Great! I have reserved next Tuesday, July 7th at 4:30 PM for your checkup. Can I confirm your full name and phone number?" },
-      { speaker: "caller", text: "Yes, it's Sarah Jenkins, and my number is 555-0199." },
-      { speaker: "agent", text: "Perfect, Sarah. You're all set! I've booked your appointment and sent a confirmation text. Is there anything else I can help you with?" },
-      { speaker: "caller", text: "No, that's all. Thank you!" },
-      { speaker: "agent", text: "You're welcome, Sarah! Have a great day and see you next Tuesday!" }
+      { speaker: "caller", text: "Hi, can I get a checkup next Tuesday afternoon?" },
+      { speaker: "agent", text: "Of course — I have 2:00 or 4:30. Which suits you best?" },
+      { speaker: "caller", text: "4:30 PM works great." },
+      { speaker: "agent", text: "Perfect, I've booked you for next Tuesday at 4:30 PM. I'll text you a confirmation now." }
     ]
   },
   {
     industry: "Restaurants",
     emoji: "🍝",
     agentRole: "Hostess Agent",
+    statusText: "Table for 4 booked · SMS sent",
     dialogue: [
-      { speaker: "caller", text: "Hey, do you guys have a table for 4 tonight around 7:30 PM?" },
-      { speaker: "agent", text: "Hi there! Let me check our table availability for 7:30 PM tonight... Yes, we have a table available in our main dining room. Would you prefer indoor or patio seating?" },
-      { speaker: "caller", text: "Indoor works best, thanks." },
-      { speaker: "agent", text: "Excellent choice. I've booked an indoor table for 4 at 7:30 PM. Under what name should I put the reservation?" },
-      { speaker: "caller", text: "Under the name David." },
-      { speaker: "agent", text: "All set, David! We look forward to hosting your party at 7:30 PM. A text confirmation has been sent to your number." },
-      { speaker: "caller", text: "Awesome, thank you!" },
-      { speaker: "agent", text: "My pleasure, David. See you tonight!" }
+      { speaker: "caller", text: "Hi, do you have a table for 4 tonight around 7:30 PM?" },
+      { speaker: "agent", text: "Yes, we have an indoor table available at 7:30 PM. Shall I reserve it under your name?" },
+      { speaker: "caller", text: "Yes, under David, please." },
+      { speaker: "agent", text: "Great, David! Your table for 4 is reserved for 7:30 PM tonight. See you then!" }
     ]
   },
   {
     industry: "Real Estate",
     emoji: "🏡",
     agentRole: "Leasing Assistant",
+    statusText: "Viewing scheduled · invite sent",
     dialogue: [
-      { speaker: "caller", text: "Hi, I saw the listing at 742 Evergreen Terrace and wanted to schedule a viewing." },
-      { speaker: "agent", text: "Hello! That's a beautiful 3-bedroom property. Our agent, Michael, is hosting private walkthroughs tomorrow between 10 AM and 1 PM. Would any time in that window suit you?" },
-      { speaker: "caller", text: "Could we do 11:30 AM?" },
-      { speaker: "agent", text: "Yes, 11:30 AM works perfectly. I will schedule that walkthrough with Michael. What is the best email to send the details and entry instructions to?" },
-      { speaker: "caller", text: "It's tom@example.com." },
-      { speaker: "agent", text: "Awesome. I've sent the viewing invitation to tom@example.com. Michael will meet you there tomorrow at 11:30 AM!" },
-      { speaker: "caller", text: "Sounds great, thanks for booking this so fast." },
-      { speaker: "agent", text: "You're welcome! Let us know if you need to reschedule. Have a wonderful day!" }
+      { speaker: "caller", text: "Hi, I saw the listing at 742 Evergreen Terrace and want to view it." },
+      { speaker: "agent", text: "Hi! We have private viewings tomorrow at 11:30 AM or 2:00 PM. Which works for you?" },
+      { speaker: "caller", text: "Let's do 11:30 AM." },
+      { speaker: "agent", text: "Awesome. I've scheduled you with Michael for 11:30 AM and emailed details to you." }
     ]
   },
   {
     industry: "IT Support",
     emoji: "💻",
     agentRole: "Helpdesk Assistant",
+    statusText: "Password link texted · resolved",
     dialogue: [
-      { speaker: "caller", text: "Hi, I'm locked out of my corporate portal account and I have a huge deadline in an hour." },
-      { speaker: "agent", text: "Oh, I understand how urgent that is! Let's get that sorted out right away. For verification, could you tell me your employee ID?" },
-      { speaker: "caller", text: "Yes, it's EMP-8942." },
-      { speaker: "agent", text: "Thank you. I've sent a secure password reset link to your registered mobile number ending in 4021. Could you check if you've received it?" },
-      { speaker: "caller", text: "Yes, got it! Resetting now... It worked, I'm back in! Thank you so much!" },
-      { speaker: "agent", text: "You're very welcome! I'm glad we could resolve this quickly. Is there anything else you need help with?" },
-      { speaker: "caller", text: "No, that was it. Lifesaver!" },
-      { speaker: "agent", text: "Anytime! Have a productive day and good luck with your deadline!" }
+      { speaker: "caller", text: "Hi, I'm locked out of my corporate portal account." },
+      { speaker: "agent", text: "I can help with that. For verification, could you tell me your employee ID?" },
+      { speaker: "caller", text: "It's EMP-8942." },
+      { speaker: "agent", text: "Thanks. I've sent a secure password reset link to your registered mobile number." }
     ]
   }
 ];
 
 export default function Landing() {
   const [formData, setFormData] = useState({
-    name: "", businessName: "", email: "", phone: "", industry: "Clinics", message: ""
+    name: "", businessName: "", email: "", phone: "", industry: "Clinics & healthcare", message: ""
   });
   const [submitted, setSubmitted] = useState(false);
   const demoMutation = useCreateDemoRequest();
-
-  // Theme Toggler state
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
 
   // Call simulator state
   const [presetIndex, setPresetIndex] = useState(0);
@@ -110,11 +92,7 @@ export default function Landing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
   // FAQ state
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   // Handle auto-advancing simulated call dialogue
   useEffect(() => {
@@ -127,7 +105,7 @@ export default function Landing() {
           return 1; // loop back
         }
       });
-    }, 3800);
+    }, 4000);
     return () => clearInterval(timer);
   }, [presetIndex, isCalling, activePreset.dialogue.length]);
 
@@ -150,172 +128,93 @@ export default function Landing() {
   const recoveredLeads = Math.round(missedCalls * (conversionRate / 100));
   const revenueRecovered = recoveredLeads * dealValue;
   const aisyncCost = 149; // Growth plan price
-  const netSavings = Math.max(0, revenueRecovered - aisyncCost);
   const roiMultiplier = revenueRecovered > 0 ? (revenueRecovered / aisyncCost).toFixed(1) : "0";
 
-  const currentTheme = mounted ? theme : "dark";
+  // Pricing values based on toggle
+  const starterPrice = isAnnual ? "39" : "49";
+  const growthPrice = isAnnual ? "119" : "149";
+  const starterNote = isAnnual ? "Billed annually ($468/yr)" : "Billed month-to-month";
+  const growthNote = isAnnual ? "Billed annually ($1,428/yr)" : "Billed month-to-month";
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/30 selection:text-foreground overflow-x-hidden transition-colors duration-300">
+    <div style={{ background: "#F6F1E9", color: "#211C16", fontFamily: "'Hanken Grotesk', sans-serif" }} className="min-h-screen overflow-x-hidden">
       
-      {/* Background Gradients */}
-      <div className="absolute top-0 left-0 w-full h-[800px] overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[70%] bg-primary/10 rounded-full blur-[140px] dark:bg-primary/5" />
-        <div className="absolute top-[20%] right-[-10%] w-[50%] h-[60%] bg-violet-500/10 rounded-full blur-[140px] dark:bg-violet-500/5" />
-      </div>
-
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full border-b border-border/40 bg-background/70 backdrop-blur-md z-50 transition-colors duration-305">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Pulsing logo */}
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-violet-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-              <Volume2 className="w-5 h-5 text-white" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full" />
-            </div>
-            <span className="font-bold text-2xl tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">Aisync</span>
+      {/* ===== NAV ===== */}
+      <nav className="sticky top-0 z-50 bg-[#F6F1E9]/85 backdrop-blur-md border-b border-[#E4D9C9] transition-all">
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 h-[74px] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] font-normal tracking-tight leading-none">Aisync</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#B8502E] translate-y-[-2px] inline-block"></span>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-[30px] text-sm font-medium text-[#6B6155]">
+            <a href="#how" className="hover:text-[#211C16] transition-colors">How it works</a>
+            <a href="#uses" className="hover:text-[#211C16] transition-colors">Use cases</a>
+            <a href="#roi" className="hover:text-[#211C16] transition-colors">ROI</a>
+            <a href="#pricing" className="hover:text-[#211C16] transition-colors">Pricing</a>
+            <Link href="/login" className="hover:text-[#211C16] transition-colors">Client login</Link>
+            <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all">Book a demo</a>
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#roi-calculator" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">ROI Calculator</a>
-            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Theme Toggle Button (Day / Night Switcher) */}
-            {mounted && (
-              <button 
-                onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
-                className="relative flex items-center justify-between w-14 h-8 bg-muted/80 border border-border/80 rounded-full p-1 cursor-pointer transition-colors hover:border-primary/50"
-                aria-label="Toggle Theme"
-              >
-                <motion.div 
-                  className="absolute w-6 h-6 rounded-full bg-primary shadow-md flex items-center justify-center"
-                  layout
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  style={{
-                    left: currentTheme === "dark" ? "calc(100% - 28px)" : "4px"
-                  }}
-                >
-                  {currentTheme === "dark" ? (
-                    <Moon className="w-3.5 h-3.5 text-primary-foreground" />
-                  ) : (
-                    <Sun className="w-3.5 h-3.5 text-primary-foreground" />
-                  )}
-                </motion.div>
-                <Sun className={`w-4 h-4 ml-1 transition-opacity ${currentTheme === "light" ? "opacity-0" : "opacity-60"}`} />
-                <Moon className={`w-4 h-4 mr-1 transition-opacity ${currentTheme === "dark" ? "opacity-0" : "opacity-60"}`} />
-              </button>
-            )}
-
-            <Link href="/login" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-4 py-2">
-              Client Login
-            </Link>
-            
-            <a href="#demo" className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm px-5 py-2.5 rounded-xl shadow-[0_4px_14px_rgba(37,99,235,0.25)] transition-all">
-              Book Demo
-            </a>
+          {/* Simple Mobile Nav Trigger (just scrolls to demo) */}
+          <div className="md:hidden flex items-center gap-3">
+            <Link href="/login" className="text-xs font-semibold text-[#6B6155] px-2 py-1">Login</Link>
+            <a href="#demo" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Book Demo</a>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-36 pb-24 px-6 relative z-10">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-12 items-center">
+      {/* ===== HERO ===== */}
+      <section className="max-w-[1180px] mx-auto px-6 md:px-14 pt-12 md:pt-16 pb-14">
+        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-14 items-center">
           
-          {/* Left Text */}
-          <div className="lg:col-span-7 flex flex-col items-start text-left">
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }} 
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary mb-6"
-            >
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-              <span>Next-Gen Voice AI Technology</span>
-            </motion.div>
+          {/* Hero Content Left */}
+          <div>
+            <div className="inline-flex items-center gap-[9px] text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold mb-[26px]">
+              <span className="w-[22px] h-[1px] bg-[#B8502E]"></span> A voice that sounds human
+            </div>
             
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-foreground"
-            >
-              Never miss another <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-violet-600 dark:from-blue-400 dark:to-violet-400">
-                customer call.
-              </span>
-            </motion.h1>
+            <h1 style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[52px] sm:text-[72px] lg:text-[82px] font-normal leading-[0.97] tracking-[-0.015em] mb-6">
+              Never miss<br />another <span style={{ fontFamily: "'Instrument Serif', serif" }} className="italic text-[#B8502E]">call</span>.
+            </h1>
             
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed"
-            >
-              Aisync is an ultra-realistic 24/7 AI voice agent designed for businesses. We handle bookings, resolve queries, and trigger instant system updates with absolute precision.
-            </motion.p>
+            <p className="text-[17px] sm:text-[19px] leading-[1.55] text-[#564C40] mb-[36px] max-w-[440px]">
+              A warm, human-sounding AI receptionist that answers every call, books the appointment, and follows up — at 2pm or 2am.
+            </p>
             
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-wrap gap-4"
-            >
-              <a href="#demo" className="bg-primary text-primary-foreground font-semibold px-7 py-4 rounded-xl shadow-[0_10px_25px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_30px_rgba(37,99,235,0.4)] hover:scale-[1.02] transition-all flex items-center gap-2">
-                Book a Live Demo <ArrowRight className="w-4 h-4" />
+            <div className="flex flex-wrap items-center gap-6">
+              <a href="#demo" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:opacity-90 transition-opacity">
+                Hear it answer a call
               </a>
-              <a href="#features" className="bg-muted hover:bg-muted/80 border border-border/80 font-semibold px-7 py-4 rounded-xl transition-all hover:scale-[1.02]">
-                Explore Features
-              </a>
-            </motion.div>
-
-            {/* Testimonial Snippet */}
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              transition={{ delay: 0.6 }}
-              className="mt-12 flex items-center gap-4 border-t border-border/40 pt-8 w-full max-w-lg"
-            >
-              <div className="flex -space-x-2">
-                {[
-                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80",
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80"
-                ].map((src, i) => (
-                  <img key={i} src={src} alt="User Avatar" className="w-9 h-9 rounded-full border-2 border-background object-cover" />
-                ))}
+              <Link href="/login" className="inline-flex items-center gap-2 font-semibold text-[15px] border-b-[1.5px] border-[#211C16] pb-[3px] text-[#211C16] hover:opacity-80 transition-opacity">
+                Client login →
+              </Link>
+            </div>
+            
+            <div className="flex items-center gap-3.5 mt-12 pt-7 border-t border-[#E4D9C9]">
+              <div className="flex">
+                <span className="w-9 h-9 rounded-full bg-[#D9C4A8] border-2 border-[#F6F1E9]"></span>
+                <span className="w-9 h-9 rounded-full bg-[#C9A98A] border-2 border-[#F6F1E9] -ml-2.5"></span>
+                <span className="w-9 h-9 rounded-full bg-[#B8966F] border-2 border-[#F6F1E9] -ml-2.5"></span>
               </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  ))}
-                  <span className="text-sm font-semibold ml-1">4.9/5</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">Trusted by 200+ clinics, shops, and firms nationwide.</p>
-              </div>
-            </motion.div>
+              <p className="text-[13.5px] text-[#6B6155] m-0 leading-[1.45]">
+                Trusted by <b className="text-[#211C16]">200+</b> clinics, studios<br />&amp; service teams nationwide.
+              </p>
+            </div>
           </div>
 
-          {/* Right Live Call Mockup Device */}
-          <div className="lg:col-span-5 relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-gradient-to-tr from-primary/10 via-transparent to-violet-500/10 rounded-3xl blur-[80px] pointer-events-none" />
-            
-            {/* Industry Preset Selector Pills */}
-            <div className="flex flex-wrap justify-center gap-2 mb-4 bg-muted/50 p-1.5 rounded-2xl border border-border/40">
+          {/* Transcript Device Right */}
+          <div className="flex flex-col gap-4">
+            {/* Industry Pills Selector */}
+            <div className="flex flex-wrap gap-1.5 p-1 bg-[#FFFDF9]/60 rounded-xl border border-[#E9DFCE] max-w-full">
               {PRESETS.map((preset, idx) => (
                 <button
                   key={idx}
                   onClick={() => setPresetIndex(idx)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    presetIndex === idx 
-                      ? "bg-card text-foreground shadow-sm border border-border/60" 
-                      : "text-muted-foreground hover:text-foreground"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    presetIndex === idx
+                      ? "bg-[#211C16] text-[#F6F1E9]"
+                      : "text-[#6B6155] hover:text-[#211C16]"
                   }`}
                 >
                   <span>{preset.emoji}</span>
@@ -324,109 +223,81 @@ export default function Landing() {
               ))}
             </div>
 
-            {/* Smart Phone Shell */}
-            <div className="relative bg-card border-4 border-border rounded-[2.5rem] shadow-2xl p-4 w-full overflow-hidden min-h-[460px] flex flex-col">
-              
-              {/* Camera Notch */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-border w-24 h-4 rounded-b-xl z-20" />
-              
-              {/* Call Header */}
-              <div className="flex items-center justify-between mt-4 pb-4 border-b border-border/40">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <span className="text-lg">{activePreset.emoji}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm tracking-tight text-foreground">{activePreset.agentRole}</h3>
-                    <p className="text-emerald-500 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Live AI Agent Handling
-                    </p>
-                  </div>
+            {/* Transcript Card Container */}
+            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[28px] shadow-[0_28px_56px_-30px_rgba(33,28,22,0.4)] relative overflow-hidden">
+              <div className="flex items-center justify-between pb-4 border-b border-[#EFE7D8]">
+                <div className="flex items-center gap-[9px]">
+                  <span className="w-2 h-2 rounded-full bg-[#4F9D69] animate-blip"></span>
+                  <span className="text-[12px] font-bold tracking-[0.06em] uppercase text-[#6B6155]">Live · {activePreset.agentRole}</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono text-muted-foreground bg-muted px-2.5 py-1 rounded-md border border-border/30">
-                    00:{dialogueCount * 4 < 10 ? `0${dialogueCount * 4}` : dialogueCount * 4}
-                  </span>
-                </div>
+                <span style={{ fontFamily: "'Newsreader', serif" }} className="text-[13px] text-[#9A8F7E]">
+                  00:{dialogueCount * 4 < 10 ? `0${dialogueCount * 4}` : dialogueCount * 4}
+                </span>
               </div>
 
-              {/* Sound Wave Visualizer */}
-              <div className="py-6 flex flex-col items-center justify-center bg-muted/30 rounded-2xl border border-border/30 my-4">
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <Volume2 className="w-3.5 h-3.5 text-primary animate-bounce" /> Live Audio Output
-                </p>
-                <div className="h-10 flex items-center gap-1">
-                  {Array.from({ length: 21 }).map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="w-1 bg-gradient-to-t from-primary to-blue-400 rounded-full"
-                      animate={{
-                        height: isCalling ? [8, Math.sin(i + dialogueCount) * 22 + 18, 8] : 6
-                      }}
-                      transition={{
-                        duration: 1 + (i % 3) * 0.2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                      style={{ height: 10 }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Message Dialogue Feed */}
-              <div className="flex-grow space-y-3 overflow-y-auto max-h-[220px] pr-1 scrollbar-thin">
+              {/* Dialogue Container */}
+              <div className="py-[22px] flex flex-col gap-5 min-h-[170px] justify-start">
                 <AnimatePresence mode="popLayout">
                   {activePreset.dialogue.slice(0, dialogueCount).map((line, index) => {
                     const isAgent = line.speaker === "agent";
                     return (
                       <motion.div
                         key={index}
-                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`flex ${isAgent ? "justify-end" : "justify-start"}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <div 
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed shadow-sm border ${
-                            isAgent 
-                              ? "bg-primary text-primary-foreground border-primary/20 rounded-tr-none" 
-                              : "bg-muted text-foreground border-border/50 rounded-tl-none"
-                          }`}
-                        >
-                          <span className="font-semibold block mb-0.5 text-[9px] uppercase tracking-wider opacity-80">
-                            {isAgent ? "Aisync Agent" : "Customer"}
-                          </span>
-                          {line.text}
+                        <div className="text-[11px] tracking-[0.12em] uppercase font-bold mb-1.5" style={{ color: isAgent ? "#6B6155" : "#B8502E" }}>
+                          {isAgent ? "Aisync" : "Caller"}
                         </div>
+                        <p style={{ fontFamily: "'Newsreader', serif" }} className="text-[17.5px] sm:text-[18px] leading-[1.45] m-0 text-[#2C261E]">
+                          {line.text}
+                        </p>
                       </motion.div>
                     );
                   })}
                 </AnimatePresence>
               </div>
 
-              {/* Floating Booking Status Pill */}
-              {dialogueCount >= 5 && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="mt-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-2.5 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Calendar updated & client confirmation SMS sent!</span>
-                </motion.div>
-              )}
+              {/* Animated Wave visualizer */}
+              <div className="flex items-end gap-[3px] h-8 my-5">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      flex: 1,
+                      backgroundColor: i % 3 === 0 ? "#E6C9B4" : i % 3 === 1 ? "#DDA988" : "#B8502E",
+                      borderRadius: "2px",
+                      transformOrigin: "bottom"
+                    }}
+                    className="h-full animate-wv"
+                  />
+                ))}
+              </div>
 
-              {/* Controls */}
-              <div className="mt-4 pt-3 border-t border-border/40 flex justify-between items-center text-xs">
-                <button 
+              {/* Success Badge */}
+              <div className="min-h-[46px]">
+                {dialogueCount >= activePreset.dialogue.length && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-2.5 bg-[#F0F6F1] border border-[#D6E7DA] rounded-xl px-[15px] py-[13px]"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-[#4F9D69] text-white flex items-center justify-center text-[12px] font-bold">✓</span>
+                    <span className="text-[13.5px] font-bold text-[#2C4A36]">{activePreset.statusText}</span>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Simulator Action Row */}
+              <div className="flex justify-between items-center mt-6 pt-3 border-t border-[#EFE7D8] text-xs">
+                <button
                   onClick={() => setIsCalling(!isCalling)}
-                  className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 font-medium transition-colors"
+                  className="text-[#6B6155] hover:text-[#211C16] flex items-center gap-1.5 font-bold transition-colors cursor-pointer"
                 >
                   {isCalling ? (
                     <>
-                      <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                      <Pause className="w-3.5 h-3.5" />
                       Pause Simulation
                     </>
                   ) : (
@@ -436,9 +307,9 @@ export default function Landing() {
                     </>
                   )}
                 </button>
-                <button 
+                <button
                   onClick={() => setDialogueCount(1)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-[#6B6155] hover:text-[#211C16] font-semibold transition-colors cursor-pointer"
                 >
                   Reset Call
                 </button>
@@ -446,664 +317,581 @@ export default function Landing() {
 
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Trust Bar */}
-      <section className="py-8 border-y border-border/40 bg-muted/20 relative z-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">INTEGRATES WITH THE SERVICES YOU USE DAILY</p>
-          <div className="flex flex-wrap items-center gap-8 md:gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-305">
-            <span className="font-bold tracking-tight text-lg">📅 Google Calendar</span>
-            <span className="font-bold tracking-tight text-lg">✉️ Outlook</span>
-            <span className="font-bold tracking-tight text-lg">💡 HubSpot</span>
-            <span className="font-bold tracking-tight text-lg">💬 Salesforce</span>
+        </div>
+
+        {/* trust strip */}
+        <div className="flex flex-col md:flex-row items-center justify-between mt-14 py-6 border-y border-[#E4D9C9] gap-4">
+          <span className="text-[12px] tracking-[0.12em] uppercase text-[#9A8F7E] font-bold text-center md:text-left">Works with the tools you already use</span>
+          <div style={{ fontFamily: "'Newsreader', serif" }} className="flex flex-wrap justify-center items-center gap-8 text-[18px] text-[#6B6155] font-normal">
+            <span>Google Calendar</span>
+            <span>Outlook</span>
+            <span>HubSpot</span>
+            <span>Calendly</span>
+            <span>Salesforce</span>
           </div>
         </div>
       </section>
 
-      {/* ROI Calculator Section */}
-      <section id="roi-calculator" className="py-24 px-6 relative z-10 bg-muted/10 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <motion.h2 
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4"
-            >
-              Calculate Your Recovered Revenue
-            </motion.h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
-              Missed calls are missed clients. See how much uncaptured revenue you can claim back automatically with Aisync.
+      {/* ===== PROBLEM ===== */}
+      <section className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+        <div className="max-w-[680px] mb-14">
+          <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">The cost of a ringing phone</span>
+          <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] tracking-[-0.01em] mt-[18px] mb-0">
+            Every unanswered call is a customer who already called someone else.
+          </h2>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-0 border-t border-[#E4D9C9]">
+          <div className="py-9 pr-6 md:border-r border-[#E4D9C9] border-b md:border-b-0">
+            <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[54px] sm:text-[64px] leading-none text-[#B8502E]">1 in 3</div>
+            <p className="text-[15px] text-[#564C40] mt-4 mb-0 leading-[1.5] max-w-[270px]">
+              calls to small businesses go unanswered during busy hours.
+            </p>
+          </div>
+          <div className="py-9 md:px-9 md:border-r border-[#E4D9C9] border-b md:border-b-0">
+            <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[54px] sm:text-[64px] leading-none text-[#B8502E]">85%</div>
+            <p className="text-[15px] text-[#564C40] mt-4 mb-0 leading-[1.5] max-w-[270px]">
+              of people who reach voicemail hang up and never call back.
+            </p>
+          </div>
+          <div className="py-9 md:pl-9">
+            <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[54px] sm:text-[64px] leading-none text-[#B8502E]">62%</div>
+            <p className="text-[15px] text-[#564C40] mt-4 mb-0 leading-[1.5] max-w-[270px]">
+              of callers won't wait on hold — they'd rather try a competitor.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FEATURES ===== */}
+      <section style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+          <div className="max-w-[620px] mb-12">
+            <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">One agent, every call</span>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-4">
+              Like your best front-desk employee — who never takes a day off.
+            </h2>
+            <p className="text-[17px] text-[#564C40] leading-[1.55] m-0">
+              Aisync speaks naturally, understands what the caller actually wants, and takes the action a good employee would.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-8 items-stretch">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { num: "01", title: "Human-like voice", desc: "Natural pacing, warm inflection, real listening. Callers rarely realize it's AI." },
+              { num: "02", title: "Inbound & outbound", desc: "Answers reservations and questions, and makes warm follow-up calls on your behalf." },
+              { num: "03", title: "Books appointments", desc: "Reads your live availability and writes the booking straight into your calendar." },
+              { num: "04", title: "Instant answers", desc: "Hours, pricing, address, services — your FAQ, answered accurately in seconds." },
+              { num: "05", title: "Summaries & notes", desc: "Every call comes back as a tidy summary with the caller's intent and next steps." },
+              { num: "06", title: "Calendar & CRM sync", desc: "Bookings, contacts, and follow-ups flow into the systems you already run on." }
+            ].map((feat, idx) => (
+              <div key={idx} style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-xl p-[30px] hover:shadow-md transition-shadow">
+                <div style={{ fontFamily: "'Newsreader', serif" }} className="italic text-[15px] text-[#B8502E] mb-[18px]">{feat.num}</div>
+                <h3 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[26px] mb-2.5">{feat.title}</h3>
+                <p className="text-[14.5px] text-[#6B6155] leading-[1.55] m-0">{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOW IT WORKS ===== */}
+      <section id="how" className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+        <div className="max-w-[620px] mb-14">
+          <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Live in an afternoon</span>
+          <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-0">
+            Four steps from ringing phone to handled call.
+          </h2>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          {[
+            { step: "1", title: "Connect your line", desc: "Forward your missed or busy calls to your Aisync number, and link your tools." },
+            { step: "2", title: "Configure the agent", desc: "Set your scripts, FAQs, booking rules, and brand voice in the portal." },
+            { step: "3", title: "It speaks naturally", desc: "The AI greets callers, understands intent, and handles the conversation warmly." },
+            { step: "4", title: "Everything syncs", desc: "Bookings, notes, and summaries land in your calendar and inbox automatically." }
+          ].map((item, idx) => (
+            <div key={idx} className="border-t-2 border-[#211C16] pt-[22px]">
+              <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[40px] leading-none mb-3.5">{item.step}</div>
+              <h3 className="text-[18px] font-bold mb-2">{item.title}</h3>
+              <p className="text-[14px] text-[#6B6155] leading-[1.55] m-0">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== USE CASES ===== */}
+      <section id="uses" style={{ background: "#211C16", color: "#F6F1E9" }}>
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+          <div className="max-w-[620px] mb-12">
+            <span className="text-xs tracking-[0.16em] uppercase text-[#E0A98A] font-bold">Built for businesses that run on the phone</span>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-0 text-[#F6F1E9]">
+              Wherever a missed call costs you money.
+            </h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#3A322A] border border-[#3A322A] rounded-2xl overflow-hidden">
+            {[
+              { title: "Clinics", desc: "Book checkups, handle reschedules, and answer insurance questions without tying up the front desk." },
+              { title: "Restaurants", desc: "Take reservations during the dinner rush, confirm party sizes, and never drop a booking." },
+              { title: "Real estate", desc: "Schedule viewings, qualify leads, and email listing details the moment someone calls." },
+              { title: "Service trades", desc: "Capture job requests on the road, book site visits, and follow up on every quote." }
+            ].map((use, idx) => (
+              <div key={idx} className="bg-[#211C16] p-[34px_28px]">
+                <div style={{ fontFamily: "'Newsreader', serif" }} className="italic text-[22px] text-[#E0A98A] mb-[18px]">{use.title}</div>
+                <p className="text-[14px] text-[#C6BBAC] leading-[1.6] m-0">{use.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== ROI CALCULATOR ===== */}
+      <section id="roi" className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+        <div className="max-w-[620px] mb-12">
+          <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Do the math</span>
+          <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-4">
+            See the revenue you're letting ring out.
+          </h2>
+          <p className="text-[17px] text-[#564C40] leading-[1.55] m-0">
+            Missed calls are missed clients. Estimate what Aisync recaptures for you each month.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 items-stretch">
+          {/* Sliders Left */}
+          <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[36px] flex flex-col justify-center">
             
-            {/* Left Sliders */}
-            <div className="lg:col-span-7 bg-card border border-border/50 rounded-3xl p-8 flex flex-col justify-between shadow-sm">
-              <div className="space-y-8">
-                
-                {/* Missed Calls */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-foreground">Missed Calls (monthly)</span>
-                    <span className="text-lg font-bold text-primary">{missedCalls} calls</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="5" 
-                    max="200" 
-                    value={missedCalls}
-                    onChange={(e) => setMissedCalls(Number(e.target.value))}
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-2 font-medium">
-                    <span>5</span>
-                    <span>100</span>
-                    <span>200</span>
-                  </div>
-                </div>
-
-                {/* Avg Ticket Value */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-foreground">Average Value Per Customer</span>
-                    <span className="text-lg font-bold text-primary">${dealValue}</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="20" 
-                    max="1500" 
-                    step="10"
-                    value={dealValue}
-                    onChange={(e) => setDealValue(Number(e.target.value))}
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-2 font-medium">
-                    <span>$20</span>
-                    <span>$750</span>
-                    <span>$1,500</span>
-                  </div>
-                </div>
-
-                {/* Conversion Rate */}
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-semibold text-foreground">Booking Conversion Rate</span>
-                    <span className="text-lg font-bold text-primary">{conversionRate}%</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="10" 
-                    max="100" 
-                    value={conversionRate}
-                    onChange={(e) => setConversionRate(Number(e.target.value))}
-                    className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted-foreground mt-2 font-medium">
-                    <span>10%</span>
-                    <span>50%</span>
-                    <span>100%</span>
-                  </div>
-                </div>
+            {/* Missed Calls Slider */}
+            <div className="mb-8">
+              <div className="flex justify-between items-baseline mb-3.5">
+                <span className="text-sm font-semibold">Missed calls each month</span>
+                <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[28px] text-[#B8502E] leading-none">{missedCalls}</span>
               </div>
-
-              <div className="mt-8 pt-6 border-t border-border/40 flex items-start gap-3 bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Formula based on conservative conversion benchmarks. Most businesses experience a higher conversion rate when callbacks are triggered within 2 minutes of the initial missed call.
-                </p>
-              </div>
+              <input
+                type="range"
+                min="5"
+                max="200"
+                value={missedCalls}
+                onChange={(e) => setMissedCalls(Number(e.target.value))}
+                style={{ accentColor: "#B8502E" }}
+                className="w-full h-1 bg-[#E4D9C9] rounded-lg appearance-none cursor-pointer"
+              />
             </div>
 
-            {/* Right Output Cards */}
-            <div className="lg:col-span-5 bg-gradient-to-b from-primary via-primary to-violet-600 rounded-3xl p-8 text-white flex flex-col justify-between shadow-xl relative overflow-hidden">
+            {/* Avg ticket value Slider */}
+            <div className="mb-8">
+              <div className="flex justify-between items-baseline mb-3.5">
+                <span className="text-sm font-semibold">Average value per customer</span>
+                <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[28px] text-[#B8502E] leading-none">${dealValue}</span>
+              </div>
+              <input
+                type="range"
+                min="20"
+                max="1500"
+                step="10"
+                value={dealValue}
+                onChange={(e) => setDealValue(Number(e.target.value))}
+                style={{ accentColor: "#B8502E" }}
+                className="w-full h-1 bg-[#E4D9C9] rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+
+            {/* Conversion rate Slider */}
+            <div>
+              <div className="flex justify-between items-baseline mb-3.5">
+                <span className="text-sm font-semibold">Booking conversion rate</span>
+                <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[28px] text-[#B8502E] leading-none">{conversionRate}%</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                value={conversionRate}
+                onChange={(e) => setConversionRate(Number(e.target.value))}
+                style={{ accentColor: "#B8502E" }}
+                className="w-full h-1 bg-[#E4D9C9] rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+
+          </div>
+
+          {/* Projection Card Right */}
+          <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[36px] flex flex-col justify-between">
+            <div>
+              <span className="text-[12px] tracking-[0.14em] uppercase text-[#E0A98A] font-bold">Monthly projection</span>
               
-              {/* Ambient radial overlay */}
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.1),transparent)] pointer-events-none" />
-
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-white/70 block mb-1">Estimated Return</span>
-                <h3 className="text-3xl font-extrabold tracking-tight mb-8">Monthly Projection</h3>
-                
-                <div className="space-y-6">
-                  <div>
-                    <span className="text-xs text-white/70 font-semibold block mb-0.5">Additional Bookings</span>
-                    <p className="text-3xl font-extrabold font-mono">{recoveredLeads} <span className="text-sm font-normal text-white/80">/ month</span></p>
-                  </div>
-
-                  <div>
-                    <span className="text-xs text-white/70 font-semibold block mb-0.5">Recovered Monthly Revenue</span>
-                    <p className="text-4xl font-black font-mono text-emerald-300">${revenueRecovered.toLocaleString()}</p>
-                  </div>
-                  
-                  <div>
-                    <span className="text-xs text-white/70 font-semibold block mb-0.5">Estimated ROI Multiplier</span>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-3xl font-extrabold font-mono text-emerald-300">{roiMultiplier}x</p>
-                      <span className="text-xs text-white/85">vs service costs</span>
-                    </div>
-                  </div>
+              <div className="mt-7">
+                <div className="text-[13px] text-[#C6BBAC] mb-1">Recovered revenue</div>
+                <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] sm:text-[64px] leading-none text-[#F6F1E9]">
+                  ${revenueRecovered.toLocaleString()}
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white/20 flex flex-col gap-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-white/80 font-semibold">Service Fee (Growth Plan):</span>
-                  <span className="font-mono font-bold bg-white/20 px-2 py-0.5 rounded">${aisyncCost}/mo</span>
+              <div className="flex gap-10 mt-7 pt-6 border-t border-[#3A322A]">
+                <div>
+                  <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] sm:text-[34px] text-[#E0A98A] leading-none">{recoveredLeads}</div>
+                  <div className="text-[12.5px] text-[#C6BBAC] mt-1">extra bookings</div>
                 </div>
-                <div className="flex justify-between items-center text-sm font-bold pt-1 border-t border-white/10">
-                  <span>Net Added Value:</span>
-                  <span className="text-emerald-300 font-mono">${netSavings.toLocaleString()} / mo</span>
+                <div>
+                  <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] sm:text-[34px] text-[#E0A98A] leading-none">{roiMultiplier}×</div>
+                  <div className="text-[12.5px] text-[#C6BBAC] mt-1 font-sans">return vs. cost</div>
                 </div>
-                <a href="#demo" className="mt-4 w-full bg-white text-primary hover:bg-white/95 font-bold py-3.5 rounded-2xl text-center text-sm transition-all shadow-[0_4px_12px_rgba(255,255,255,0.15)]">
-                  Recapture This Revenue Now
-                </a>
               </div>
             </div>
 
+            <a href="#demo" className="mt-8 block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] hover:opacity-95 transition-opacity">
+              Recapture this revenue
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 px-6 relative z-10">
-        <div className="max-w-6xl mx-auto">
+      {/* ===== PRICING ===== */}
+      <section id="pricing" style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
           
-          <div className="text-center mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary mb-3 block">Full Product Capability</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">Enterprise-grade Voice Automation</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
-              Aisync comes packed with the standard tools required to scale your customer outreach and inbound handling effortlessly.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                title: "Ultra-Realistic Text-to-Speech",
-                desc: "Powered by deep neural speech models. Our agents use human-like pacing, breathing markers, and warm inflections.",
-                icon: Volume2
-              },
-              {
-                title: "Inbound & Outbound Calling",
-                desc: "Answering incoming reservations, scheduling follow-ups, or running warm outbound campaigns smoothly.",
-                icon: Phone
-              },
-              {
-                title: "Live Calendar Syncing",
-                desc: "Instantly reads real-time team schedules and books slots directly into Outlook or Google Calendar.",
-                icon: Calendar
-              },
-              {
-                title: "Instant Answers & Knowledge",
-                desc: "Give your agent your store's hours, address, services, and FAQ sheet. It answers queries accurately in seconds.",
-                icon: Zap
-              },
-              {
-                title: "Conversational Analytics",
-                desc: "Review call volume patterns, customer requests, text sentiments, and full audio transcripts from the portal.",
-                icon: TrendingUp
-              },
-              {
-                title: "Safe and Secure Platform",
-                desc: "Fully encrypted records. Our system meets standard HIPAA compliance rules for secure medical appointment booking.",
-                icon: Shield
-              }
-            ].map((feature, i) => (
-              <motion.div 
-                key={i} 
-                className="bg-card border border-border/50 hover:border-primary/40 p-8 rounded-3xl transition-all duration-300 hover:shadow-lg group"
-                whileHover={{ y: -5 }}
-              >
-                <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                  <feature.icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works Section */}
-      <section id="how-it-works" className="py-24 px-6 bg-muted/10 relative z-10 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto">
-          
-          <div className="text-center mb-20">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary mb-3 block">Simple Setup</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">Go Live in 15 Minutes</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
-              Skip the long training schedules. Deploying a voice agent with Aisync takes three simple steps.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-12 relative">
-            {/* Visual connector lines */}
-            <div className="hidden md:block absolute top-14 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-primary/30 via-violet-500/20 to-transparent z-0" />
+          <div className="text-center mb-11">
+            <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Simple plans</span>
+            <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-6">
+              Pricing that scales with your phone.
+            </h2>
             
-            {[
-              {
-                step: "01",
-                title: "Define Knowledge Base",
-                desc: "Upload your store schedule, service prices, address details, and custom system guidelines to teach your agent."
-              },
-              {
-                step: "02",
-                title: "Select Agent Voice",
-                desc: "Choose from 12+ premium gender neutral and natural vocal styles. Adjust tone, pace, and language options."
-              },
-              {
-                step: "03",
-                title: "Connect and Go Live",
-                desc: "Forward your missed/busy line calls to your unique Aisync dialer number. Watch bookings fill your screen."
-              }
-            ].map((step, idx) => (
-              <div key={idx} className="relative z-10 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-background border-2 border-primary text-primary font-black text-xl flex items-center justify-center shadow-md mb-6 transition-all hover:scale-110">
-                  {step.step}
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-foreground">{step.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          
-          <div className="text-center mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary mb-3 block">Flexible Plans</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">Transparent Scale Pricing</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base mb-8">
-              Choose the package that aligns with your call volume. Get 2 months free with annual billing.
-            </p>
-
-            {/* Monthly / Annual Toggle Switch */}
-            <div className="inline-flex items-center justify-center p-1 bg-muted rounded-2xl border border-border/40">
-              <button 
+            {/* Toggle Billing */}
+            <div className="inline-flex items-center gap-1 bg-[#E4D9C9] p-1 rounded-full">
+              <button
                 onClick={() => setIsAnnual(false)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${!isAnnual ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                style={{
+                  padding: "9px 18px",
+                  border: "none",
+                  borderRadius: "999px",
+                  background: !isAnnual ? "#211C16" : "transparent",
+                  color: !isAnnual ? "#F6F1E9" : "#6B6155",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Hanken Grotesk', sans-serif"
+                }}
+                className="transition-all"
               >
                 Monthly
               </button>
-              <button 
+              <button
                 onClick={() => setIsAnnual(true)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${isAnnual ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                style={{
+                  padding: "9px 18px",
+                  border: "none",
+                  borderRadius: "999px",
+                  background: isAnnual ? "#211C16" : "transparent",
+                  color: isAnnual ? "#F6F1E9" : "#6B6155",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "'Hanken Grotesk', sans-serif"
+                }}
+                className="transition-all"
               >
-                <span>Annually</span>
-                <span className="bg-primary/20 text-primary text-[9px] px-1.5 py-0.5 rounded-full font-black">SAVE 20%</span>
+                Annual · save 20%
               </button>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto">
-            
+          <div className="grid lg:grid-cols-3 gap-5 items-stretch">
             {/* Starter Plan */}
-            <div className="bg-card border border-border/50 rounded-3xl p-8 flex flex-col justify-between shadow-sm hover:border-border transition-colors">
+            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[34px] flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground block mb-2">Starter</span>
-                <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-4xl font-extrabold font-mono text-foreground">${isAnnual ? "39" : "49"}</span>
-                  <span className="text-sm text-muted-foreground">/ month</span>
+                <span className="text-[12px] tracking-[0.12em] uppercase text-[#6B6155] font-bold">Starter</span>
+                <div className="flex items-baseline gap-1.5 mt-[18px] mb-1">
+                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] leading-none">${starterPrice}</span>
+                  <span className="text-[14px] text-[#6B6155]">/ mo</span>
                 </div>
-                <span className="text-[10px] font-semibold text-muted-foreground/80 block mb-6">
-                  {isAnnual ? "Billed annually ($468/yr)" : "Billed month-to-month"}
-                </span>
+                <span className="text-[12px] text-[#9A8F7E] block mb-6">{starterNote}</span>
+                <div className="h-px bg-[#EFE7D8] mb-[22px]"></div>
                 
-                <hr className="border-border/40 mb-6" />
-
-                <ul className="space-y-4 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>200 active call minutes / mo</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>1 Custom AI voice agent</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Standard natural voice engine</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Web booking dashboard</span>
-                  </li>
+                <ul className="list-none p-0 m-[0_0_28px] flex flex-col gap-3 text-[14px] text-[#564C40]">
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> 200 call minutes / month</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> 1 custom AI voice agent</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Standard voice engine</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Web booking dashboard</li>
                 </ul>
               </div>
 
-              <a href="#demo" className="mt-8 w-full bg-muted hover:bg-muted/80 text-foreground font-semibold py-3 rounded-2xl text-center text-sm transition-all border border-border/60">
-                Get Started
+              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all">
+                Get started
               </a>
             </div>
 
             {/* Growth Plan (Popular) */}
-            <div className="bg-card border-2 border-primary rounded-3xl p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
-              <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-[9px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full">
-                Most Popular
-              </div>
-
+            <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[34px] flex flex-col justify-between relative">
+              <span style={{ fontFamily: "'Newsreader', serif" }} className="absolute top-6 right-6 italic text-[14px] text-[#E0A98A]">Most popular</span>
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-primary block mb-2">Growth</span>
-                <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-4xl font-extrabold font-mono text-foreground">${isAnnual ? "119" : "149"}</span>
-                  <span className="text-sm text-muted-foreground">/ month</span>
+                <span className="text-[12px] tracking-[0.12em] uppercase text-[#E0A98A] font-bold">Growth</span>
+                <div className="flex items-baseline gap-1.5 mt-[18px] mb-1">
+                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] leading-none text-[#F6F1E9]">${growthPrice}</span>
+                  <span className="text-[14px] text-[#C6BBAC]">/ mo</span>
                 </div>
-                <span className="text-[10px] font-semibold text-muted-foreground/80 block mb-6">
-                  {isAnnual ? "Billed annually ($1,428/yr)" : "Billed month-to-month"}
-                </span>
-
-                <hr className="border-border/40 mb-6" />
-
-                <ul className="space-y-4 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span className="text-foreground font-semibold">800 active call minutes / mo</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Up to 3 active AI voice agents</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Premium voice model library</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>SMS / Email customer follow-ups</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Direct Google & Outlook calendar sync</span>
-                  </li>
+                <span className="text-[12px] text-[#9A8F7E] block mb-6">{growthNote}</span>
+                <div className="h-px bg-[#3A322A] mb-[22px]"></div>
+                
+                <ul className="list-none p-0 m-[0_0_28px] flex flex-col gap-3 text-[14px] text-[#D8CFC2]">
+                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> 800 call minutes / month</li>
+                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> Up to 3 AI voice agents</li>
+                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> Premium voice library</li>
+                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> SMS &amp; email follow-ups</li>
+                  <li className="flex gap-2.5"><span className="text-[#E0A98A]">—</span> Google &amp; Outlook sync</li>
                 </ul>
               </div>
 
-              <a href="#demo" className="mt-8 w-full bg-primary hover:bg-primary/95 text-primary-foreground font-semibold py-3.5 rounded-2xl text-center text-sm transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)]">
-                Get Started Today
+              <a href="#demo" className="mt-auto block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[14px] hover:opacity-95 transition-opacity">
+                Get started today
               </a>
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-card border border-border/50 rounded-3xl p-8 flex flex-col justify-between shadow-sm hover:border-border transition-colors">
+            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[34px] flex flex-col justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground block mb-2">Enterprise</span>
-                <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-4xl font-extrabold text-foreground">Custom</span>
+                <span className="text-[12px] tracking-[0.12em] uppercase text-[#6B6155] font-bold">Enterprise</span>
+                <div className="flex items-baseline mt-[18px] mb-1">
+                  <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[56px] leading-none">Custom</span>
                 </div>
-                <span className="text-[10px] font-semibold text-muted-foreground/80 block mb-6">
-                  Tailored to your business scale
-                </span>
-
-                <hr className="border-border/40 mb-6" />
-
-                <ul className="space-y-4 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span className="text-foreground font-semibold">Unlimited minutes volume</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Custom voice cloning engine</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Dedicated account support manager</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>API & Webhook system integration</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span>Custom SLA & server infrastructure</span>
-                  </li>
+                <span className="text-[12px] text-[#9A8F7E] block mb-6">Tailored to your scale</span>
+                <div className="h-px bg-[#EFE7D8] mb-[22px]"></div>
+                
+                <ul className="list-none p-0 m-[0_0_28px] flex flex-col gap-3 text-[14px] text-[#564C40]">
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Unlimited call volume</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Custom voice cloning</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Dedicated account manager</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> API &amp; webhook integration</li>
+                  <li className="flex gap-2.5"><span className="text-[#B8502E]">—</span> Custom SLA &amp; infrastructure</li>
                 </ul>
               </div>
 
-              <a href="#demo" className="mt-8 w-full bg-muted hover:bg-muted/80 text-foreground font-semibold py-3 rounded-2xl text-center text-sm transition-all border border-border/60">
-                Contact Sales
+              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all">
+                Contact sales
               </a>
             </div>
-
           </div>
+
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="py-24 px-6 bg-muted/10 relative z-10 transition-colors duration-300">
-        <div className="max-w-4xl mx-auto">
-          
-          <div className="text-center mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary mb-3 block">Got Questions?</span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">Frequently Asked Questions</h2>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Everything you need to know about Aisync voice agents, setup, and billing.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {[
-              {
-                q: "Does the AI sound like a real human?",
-                a: "Yes! Aisync uses state-of-the-art neural text-to-speech technology with ultra-low latency. Our voices include natural breathing patterns, human-like pacing, and realistic inflections so callers rarely realize they are speaking to an AI."
-              },
-              {
-                q: "How does the calendar and booking integration work?",
-                a: "Aisync connects directly with Google Calendar, Outlook, Calendly, and industry-specific scheduling software (like Jane, Mindbody, or Acuity). It reads your live availability and books appointments directly into your schedule, sending instant text confirmations."
-              },
-              {
-                q: "Can I customize the agent's script and personality?",
-                a: "Absolutely. Through our easy-to-use client portal, you can define your agent's knowledge base, greeting, booking rules, FAQs, and tone of voice. You can update this information at any time and it takes effect instantly."
-              },
-              {
-                q: "What happens if the AI agent gets stuck or cannot answer?",
-                a: "If a caller asks something outside the agent's knowledge base, the AI can gracefully offer to take a message, transfer the call to a human team member, or schedule a callback. You will receive an immediate summary of the conversation via email or SMS."
-              },
-              {
-                q: "Is there a contract or can I cancel anytime?",
-                a: "Our Starter and Growth plans are billed on a month-to-month basis, and you can cancel or change plans at any time without penalty. We also offer discounted annual billing if you choose to lock in savings."
-              }
-            ].map((faq, idx) => (
-              <div key={idx} className="border border-border/40 bg-card rounded-2xl overflow-hidden transition-all">
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full px-6 py-5 flex items-center justify-between text-left font-bold text-sm sm:text-base text-foreground hover:text-primary transition-colors focus:outline-none cursor-pointer"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${openFaq === idx ? "rotate-180 text-primary" : ""}`} />
-                </button>
-                <AnimatePresence initial={false}>
-                  {openFaq === idx && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: "easeInOut" }}
-                    >
-                      <div className="px-6 pb-5 text-xs sm:text-sm text-muted-foreground border-t border-border/30 pt-3 leading-relaxed">
-                        {faq.a}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
+      {/* ===== FAQ ===== */}
+      <section id="faq" className="max-w-[760px] mx-auto px-6 md:px-14 py-16 md:py-20">
+        <div className="text-center mb-12">
+          <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Good questions</span>
+          <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-0">
+            Frequently asked.
+          </h2>
         </div>
-      </section>
 
-      {/* Demo Form Section */}
-      <section id="demo" className="py-24 px-6 relative z-10">
-        <div className="max-w-3xl mx-auto bg-card border border-border/60 rounded-[2rem] p-8 sm:p-12 shadow-2xl relative">
-          
-          <div className="absolute top-[-10%] right-[-10%] w-[30%] h-[30%] bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
-
-          <div className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">Request a Live Demo</h2>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Give your business the 24/7 coverage it deserves. Tell us about your operations and we will customize a demo voice agent for you.
-            </p>
-          </div>
-
-          {submitted ? (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-primary/5 border border-primary/20 p-8 sm:p-12 rounded-2xl text-center"
-            >
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl shadow-lg shadow-primary/20">✓</div>
-              <h3 className="text-2xl font-bold mb-3">Request Received!</h3>
-              <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto leading-relaxed">
-                Thank you for reaching out. A team member will email you shortly to schedule a live call and present your tailored voice agent.
-              </p>
-            </motion.div>
-          ) : (
-            <form onSubmit={handleDemoSubmit} className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-muted-foreground">Full Name</label>
-                  <input 
-                    required 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})} 
-                    className="w-full bg-muted/50 border border-border/60 hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm focus:outline-none transition-all animate-none bg-black/10 dark:bg-black/40"
-                    placeholder="Jane Doe"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-muted-foreground">Business Name</label>
-                  <input 
-                    required 
-                    value={formData.businessName} 
-                    onChange={e => setFormData({...formData, businessName: e.target.value})} 
-                    className="w-full bg-muted/50 border border-border/60 hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm focus:outline-none transition-all animate-none bg-black/10 dark:bg-black/40"
-                    placeholder="Acme Dental Clinic"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-muted-foreground">Work Email</label>
-                  <input 
-                    required 
-                    type="email" 
-                    value={formData.email} 
-                    onChange={e => setFormData({...formData, email: e.target.value})} 
-                    className="w-full bg-muted/50 border border-border/60 hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm focus:outline-none transition-all animate-none bg-black/10 dark:bg-black/40"
-                    placeholder="jane@company.com"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-muted-foreground">Phone Number</label>
-                  <input 
-                    required 
-                    value={formData.phone} 
-                    onChange={e => setFormData({...formData, phone: e.target.value})} 
-                    className="w-full bg-muted/50 border border-border/60 hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm focus:outline-none transition-all animate-none bg-black/10 dark:bg-black/40"
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-muted-foreground">Business Industry</label>
-                <select 
-                  value={formData.industry} 
-                  onChange={e => setFormData({...formData, industry: e.target.value})} 
-                  className="w-full bg-muted/50 border border-border/60 hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm focus:outline-none cursor-pointer transition-all bg-black/10 dark:bg-black/40"
-                >
-                  <option value="Clinics">Clinics & Healthcare</option>
-                  <option value="Restaurants">Restaurants & Hospitality</option>
-                  <option value="Real Estate">Real Estate & Property Management</option>
-                  <option value="Service Trades">Service Trades (Plumbing, HVAC, Electrical)</option>
-                  <option value="Other">Other Retail / Firms</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-muted-foreground">Message (Optional)</label>
-                <textarea 
-                  rows={4} 
-                  value={formData.message} 
-                  onChange={e => setFormData({...formData, message: e.target.value})} 
-                  className="w-full bg-muted/50 border border-border/60 hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm focus:outline-none transition-all resize-none bg-black/10 dark:bg-black/40" 
-                  placeholder="Tell us about the types of calls you want to automate..."
-                />
-              </div>
-
-              <button 
-                disabled={demoMutation.isPending} 
-                className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-bold py-4 rounded-xl transition-all shadow-[0_4px_14px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer mt-4"
+        <div>
+          {[
+            {
+              q: "Does the AI really sound like a person?",
+              a: "Yes. Aisync uses neural text-to-speech with natural pacing, breathing, and warm inflection, plus ultra-low latency so there's no awkward delay. Most callers don't realize they're talking to AI."
+            },
+            {
+              q: "How does the booking integration work?",
+              a: "Aisync connects to Google Calendar, Outlook, Calendly, and industry tools like Jane, Mindbody, and Acuity. It reads live availability, books directly into your schedule, and sends an instant text confirmation."
+            },
+            {
+              q: "Can I customize the script and personality?",
+              a: "Completely. In the client portal you define the greeting, knowledge base, booking rules, FAQs, and tone of voice — and updates take effect instantly."
+            },
+            {
+              q: "What if the agent can't answer something?",
+              a: "It gracefully takes a message, transfers to a human, or schedules a callback — and sends you an immediate summary of the conversation by email or SMS."
+            },
+            {
+              q: "Is there a contract, or can I cancel anytime?",
+              a: "Starter and Growth are month-to-month — cancel or change plans anytime, no penalty. Annual billing is available if you'd like to lock in savings."
+            }
+          ].map((faq, idx) => (
+            <div key={idx} className="border-t border-[#E4D9C9] last:border-b last:border-[#E4D9C9]">
+              <button
+                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                className="w-full bg-none border-none py-6 flex justify-between items-center cursor-pointer text-left focus:outline-none"
               >
-                {demoMutation.isPending ? "Submitting Request..." : "Request Tailored Demo"}
+                <span className="text-[17px] sm:text-[18px] font-bold text-[#211C16]">{faq.q}</span>
+                <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[26px] text-[#B8502E] leading-none">
+                  {openFaq === idx ? "–" : "+"}
+                </span>
               </button>
-            </form>
-          )}
+              
+              <AnimatePresence initial={false}>
+                {openFaq === idx && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <p style={{ fontFamily: "'Newsreader', serif" }} className="text-[17px] leading-[1.6] text-[#564C40] m-0 pb-[26px]">
+                      {faq.a}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-16 bg-muted/10 relative z-10 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-8">
-          
-          {/* Brand Info */}
-          <div className="col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md">
-                <Volume2 className="w-4 h-4 text-white" />
+      {/* ===== DEMO REQUEST FORM ===== */}
+      <section id="demo" className="bg-[#211C16] text-[#F6F1E9]">
+        <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-20 md:py-24">
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-16 items-start">
+            
+            {/* Demo Side Info */}
+            <div>
+              <span className="text-[12px] tracking-[0.16em] uppercase text-[#E0A98A] font-bold">Book your demo</span>
+              <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[52px] leading-[1.04] mt-[18px] mb-[22px] text-[#F6F1E9]">
+                Hear your own agent answer a call.
+              </h2>
+              <p className="text-[17px] text-[#C6BBAC] leading-[1.6] mb-8 max-w-[380px]">
+                Tell us a little about your business and we'll set up a live demo tuned to your industry — usually within a day.
+              </p>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 text-[15px] text-[#D8CFC2]">
+                  <span className="text-[#E0A98A] font-bold">—</span> A real call you can listen to
+                </div>
+                <div className="flex items-center gap-3 text-[15px] text-[#D8CFC2]">
+                  <span className="text-[#E0A98A] font-bold">—</span> Set up for your use case
+                </div>
+                <div className="flex items-center gap-3 text-[15px] text-[#D8CFC2]">
+                  <span className="text-[#E0A98A] font-bold">—</span> No commitment, no card
+                </div>
               </div>
-              <span className="font-bold text-xl tracking-tight text-foreground">Aisync</span>
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
-              Deploy realistic natural language voice agents that answer 24/7, book calendars, send notifications, and handle support workflows with standard precision.
-            </p>
-            <p className="text-xs text-muted-foreground/60">
-              © {new Date().getFullYear()} Aisync Systems, Inc. All rights reserved.
-            </p>
-          </div>
 
-          {/* Links 1 */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-4">Product</h4>
-            <ul className="space-y-2 text-xs text-muted-foreground">
-              <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
-              <li><a href="#roi-calculator" className="hover:text-primary transition-colors">ROI Calculator</a></li>
-              <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing Options</a></li>
-              <li><a href="#demo" className="hover:text-primary transition-colors">Request Demo</a></li>
-            </ul>
-          </div>
+            {/* Demo Form Container */}
+            <div style={{ background: "#FFFDF9" }} className="rounded-2xl p-[36px] text-[#211C16]">
+              {submitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center text-center py-10 px-5"
+                >
+                  <span className="w-14 h-14 rounded-full bg-[#F0F6F1] border border-[#D6E7DA] text-[#4F9D69] flex items-center justify-center text-[26px]">✓</span>
+                  <h3 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[32px] text-[#211C16] mt-[22px] mb-2.5">
+                    You're on the list.
+                  </h3>
+                  <p className="text-[15px] text-[#6B6155] leading-[1.55] m-0 max-w-[320px]">
+                    Thanks — we'll be in touch shortly to schedule your live demo.
+                  </p>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleDemoSubmit} className="flex flex-col gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Your name</label>
+                      <input
+                        required
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Jane Doe"
+                        style={{ border: "1px solid #E4D9C9", background: "#F6F1E9" }}
+                        className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Business name</label>
+                      <input
+                        required
+                        type="text"
+                        value={formData.businessName}
+                        onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                        placeholder="Bright Smile Dental"
+                        style={{ border: "1px solid #E4D9C9", background: "#F6F1E9" }}
+                        className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
 
-          {/* Links 2 */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-4">Legal</h4>
-            <ul className="space-y-2 text-xs text-muted-foreground">
-              <li><span className="cursor-default">Privacy Policy</span></li>
-              <li><span className="cursor-default">Terms of Service</span></li>
-              <li><span className="cursor-default">Security Standards</span></li>
-              <li><span className="cursor-default">HIPAA Compliance</span></li>
-            </ul>
-          </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Email</label>
+                      <input
+                        required
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="jane@brightsmile.com"
+                        style={{ border: "1px solid #E4D9C9", background: "#F6F1E9" }}
+                        className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Phone</label>
+                      <input
+                        required
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="(555) 019-9000"
+                        style={{ border: "1px solid #E4D9C9", background: "#F6F1E9" }}
+                        className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
+                      />
+                    </div>
+                  </div>
 
-          {/* Links 3 */}
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-4">Connect</h4>
-            <ul className="space-y-2 text-xs text-muted-foreground">
-              <li><span className="cursor-default">Support Center</span></li>
-              <li><span className="cursor-default">LinkedIn</span></li>
-              <li><span className="cursor-default">X (Twitter)</span></li>
-              <li><span className="cursor-default">Email Contact</span></li>
-            </ul>
-          </div>
+                  <div>
+                    <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Industry</label>
+                    <select
+                      value={formData.industry}
+                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                      style={{ border: "1px solid #E4D9C9", background: "#F6F1E9" }}
+                      className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
+                    >
+                      <option>Clinics &amp; healthcare</option>
+                      <option>Restaurants</option>
+                      <option>Real estate</option>
+                      <option>Service trades</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
 
+                  <div>
+                    <label className="block text-[12px] font-bold text-[#6B6155] mb-[7px]">Anything we should know?</label>
+                    <textarea
+                      rows={3}
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      placeholder="We miss a lot of calls during lunch..."
+                      style={{ border: "1px solid #E4D9C9", background: "#F6F1E9", resize: "vertical" }}
+                      className="w-full p-[12px_14px] rounded-xl text-sm focus:border-[#B8502E] focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="bg-[#211C16] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] cursor-pointer hover:opacity-90 transition-opacity mt-2"
+                  >
+                    Request my demo
+                  </button>
+                </form>
+              )}
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FOOTER ===== */}
+      <footer className="max-w-[1180px] mx-auto px-6 md:px-14 py-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-baseline gap-2">
+          <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[24px]">Aisync</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#B8502E] translate-y-[-2px] inline-block"></span>
+        </div>
+        <p className="text-[13px] text-[#9A8F7E] m-0 text-center sm:text-left">© 2026 Aisync — never miss another call.</p>
+        <div className="flex gap-6 text-[13px] text-[#6B6155]">
+          <span className="cursor-pointer hover:text-[#211C16] transition-colors">Privacy</span>
+          <span className="cursor-pointer hover:text-[#211C16] transition-colors">Terms</span>
+          <span className="cursor-pointer hover:text-[#211C16] transition-colors">Contact</span>
         </div>
       </footer>
 
