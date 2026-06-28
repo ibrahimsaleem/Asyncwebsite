@@ -3,20 +3,38 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Aisync API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: clients
+    description: Client management
+  - name: projects
+    description: Project management
+  - name: employees
+    description: Employee management
+  - name: invoices
+    description: Invoice management
+  - name: files
+    description: File upload management
+  - name: featureRequests
+    description: Feature/change requests
+  - name: demoRequests
+    description: Demo/contact form requests
+  - name: dashboard
+    description: Dashboard metrics and summaries
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +42,565 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  # Demo Requests
+  /demo-requests:
+    post:
+      operationId: createDemoRequest
+      tags: [demoRequests]
+      summary: Submit a demo/contact request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoRequestInput"
+      responses:
+        "201":
+          description: Demo request submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoRequest"
+    get:
+      operationId: listDemoRequests
+      tags: [demoRequests]
+      summary: List all demo requests (admin only)
+      responses:
+        "200":
+          description: List of demo requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DemoRequest"
+
+  # Clients
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List all clients (admin only)
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientWithUser"
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create a new client (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientWithUser"
+
+  /clients/me:
+    get:
+      operationId: getMyClient
+      tags: [clients]
+      summary: Get the current client profile
+      responses:
+        "200":
+          description: Current client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientWithUser"
+        "404":
+          description: Not found
+
+  /clients/{id}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      summary: Get a specific client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientWithUser"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      summary: Update client details (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientWithUser"
+
+  # Projects
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects (admin) or client's own projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectWithDetails"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithDetails"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithDetails"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithDetails"
+
+  /projects/{id}/assign:
+    post:
+      operationId: assignEmployee
+      tags: [projects]
+      summary: Assign an employee to a project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentInput"
+      responses:
+        "201":
+          description: Employee assigned
+
+  /projects/{id}/unassign:
+    post:
+      operationId: unassignEmployee
+      tags: [projects]
+      summary: Remove employee from project (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentInput"
+      responses:
+        "200":
+          description: Employee unassigned
+
+  # Employees
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List all employees (admin only)
+      responses:
+        "200":
+          description: List of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create a new employee (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeInput"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /employees/{id}:
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update employee (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmployeeUpdate"
+      responses:
+        "200":
+          description: Employee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+    delete:
+      operationId: deleteEmployee
+      tags: [employees]
+      summary: Delete employee (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Employee deleted
+
+  # Invoices
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List all invoices (admin) or client's own invoices
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create a new invoice (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update invoice (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceUpdate"
+      responses:
+        "200":
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  # Files
+  /files:
+    get:
+      operationId: listFiles
+      tags: [files]
+      summary: List uploaded files (admin) or client's own files
+      responses:
+        "200":
+          description: List of files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UploadedFile"
+    post:
+      operationId: uploadFile
+      tags: [files]
+      summary: Upload a file (multipart/form-data handled server-side via multer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileUploadInput"
+      responses:
+        "201":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadedFile"
+
+  /files/{id}:
+    delete:
+      operationId: deleteFile
+      tags: [files]
+      summary: Delete a file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: File deleted
+
+  # Feature Requests
+  /feature-requests:
+    get:
+      operationId: listFeatureRequests
+      tags: [featureRequests]
+      summary: List feature requests (admin) or client's own requests
+      responses:
+        "200":
+          description: List of feature requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeatureRequest"
+    post:
+      operationId: createFeatureRequest
+      tags: [featureRequests]
+      summary: Submit a feature/change request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeatureRequestInput"
+      responses:
+        "201":
+          description: Feature request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureRequest"
+
+  /feature-requests/{id}:
+    patch:
+      operationId: updateFeatureRequest
+      tags: [featureRequests]
+      summary: Update feature request status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeatureRequestUpdate"
+      responses:
+        "200":
+          description: Feature request updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureRequest"
+
+  # Dashboard
+  /dashboard/admin-summary:
+    get:
+      operationId: getAdminSummary
+      tags: [dashboard]
+      summary: Get admin dashboard summary metrics
+      responses:
+        "200":
+          description: Admin summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +611,410 @@ components:
       required:
         - status
 
+    # Auth
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, client]
+        createdAt:
+          type: string
+
+    # Demo Request
+    DemoRequestInput:
+      type: object
+      required: [name, businessName, email, phone, industry]
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        industry:
+          type: string
+        message:
+          type: ["string", "null"]
+
+    DemoRequest:
+      type: object
+      required: [id, name, businessName, email, phone, industry, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        businessName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        industry:
+          type: string
+        message:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    # Clients
+    ClientInput:
+      type: object
+      required: [name, email, businessName, industry, phone]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        businessName:
+          type: string
+        industry:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: ["string", "null"]
+        password:
+          type: string
+
+    ClientUpdate:
+      type: object
+      properties:
+        businessName:
+          type: string
+        industry:
+          type: string
+        phone:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    ClientWithUser:
+      type: object
+      required: [id, userId, businessName, industry, phone, email]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        businessName:
+          type: string
+        industry:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        notes:
+          type: ["string", "null"]
+        userName:
+          type: string
+        userEmail:
+          type: string
+
+    # Projects
+    ProjectInput:
+      type: object
+      required: [clientId, projectName, description, status]
+      properties:
+        clientId:
+          type: integer
+        projectName:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [onboarding, build_phase, demo_phase, testing, completed]
+        startDate:
+          type: ["string", "null"]
+        expectedCompletionDate:
+          type: ["string", "null"]
+        latestUpdate:
+          type: ["string", "null"]
+
+    ProjectUpdate:
+      type: object
+      properties:
+        projectName:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [onboarding, build_phase, demo_phase, testing, completed]
+        startDate:
+          type: ["string", "null"]
+        expectedCompletionDate:
+          type: ["string", "null"]
+        latestUpdate:
+          type: ["string", "null"]
+
+    Employee:
+      type: object
+      required: [id, name, role, email]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+
+    ProjectWithDetails:
+      type: object
+      required: [id, clientId, projectName, description, status]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        projectName:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [onboarding, build_phase, demo_phase, testing, completed]
+        startDate:
+          type: ["string", "null"]
+        expectedCompletionDate:
+          type: ["string", "null"]
+        latestUpdate:
+          type: ["string", "null"]
+        clientBusinessName:
+          type: string
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+
+    AssignmentInput:
+      type: object
+      required: [employeeId]
+      properties:
+        employeeId:
+          type: integer
+
+    # Employees
+    EmployeeInput:
+      type: object
+      required: [name, role, email]
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+
+    EmployeeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+
+    # Invoices
+    InvoiceInput:
+      type: object
+      required: [clientId, invoiceNumber, totalAmount, paidAmount, dueAmount, status, dueDate]
+      properties:
+        clientId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+        invoiceNumber:
+          type: string
+        totalAmount:
+          type: number
+        paidAmount:
+          type: number
+        dueAmount:
+          type: number
+        status:
+          type: string
+          enum: [paid, partial, due, overdue]
+        dueDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    InvoiceUpdate:
+      type: object
+      properties:
+        invoiceNumber:
+          type: string
+        totalAmount:
+          type: number
+        paidAmount:
+          type: number
+        dueAmount:
+          type: number
+        status:
+          type: string
+          enum: [paid, partial, due, overdue]
+        dueDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    Invoice:
+      type: object
+      required: [id, clientId, invoiceNumber, totalAmount, paidAmount, dueAmount, status, dueDate, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+        invoiceNumber:
+          type: string
+        totalAmount:
+          type: number
+        paidAmount:
+          type: number
+        dueAmount:
+          type: number
+        status:
+          type: string
+          enum: [paid, partial, due, overdue]
+        dueDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        clientBusinessName:
+          type: ["string", "null"]
+
+    # Files
+    FileUploadInput:
+      type: object
+      required: [fileName]
+      properties:
+        fileName:
+          type: string
+        projectId:
+          type: ["integer", "null"]
+
+    UploadedFile:
+      type: object
+      required: [id, clientId, fileName, filePath, uploadedAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+        fileName:
+          type: string
+        filePath:
+          type: string
+        uploadedAt:
+          type: string
+
+    # Feature Requests
+    FeatureRequestInput:
+      type: object
+      required: [title, description, priority]
+      properties:
+        projectId:
+          type: ["integer", "null"]
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+
+    FeatureRequestUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, in_review, approved, completed, rejected]
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+
+    FeatureRequest:
+      type: object
+      required: [id, clientId, title, description, priority, status, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        projectId:
+          type: ["integer", "null"]
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+        status:
+          type: string
+          enum: [new, in_review, approved, completed, rejected]
+        createdAt:
+          type: string
+        clientBusinessName:
+          type: ["string", "null"]
+
+    # Dashboard
+    AdminSummary:
+      type: object
+      required: [totalClients, activeProjects, completedProjects, totalPaid, totalDue, pendingFeatureRequests]
+      properties:
+        totalClients:
+          type: integer
+        activeProjects:
+          type: integer
+        completedProjects:
+          type: integer
+        totalPaid:
+          type: number
+        totalDue:
+          type: number
+        pendingFeatureRequests:
+          type: integer

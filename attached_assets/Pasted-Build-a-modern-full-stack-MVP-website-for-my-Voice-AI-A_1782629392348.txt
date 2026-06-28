@@ -1,0 +1,407 @@
+Build a modern full-stack MVP website for my Voice AI Agent business called **Aisync**.
+
+Use the attached presentation as the main source for business details, branding, copy, services, and value proposition.
+
+Business summary:
+Aisync provides a human-like AI voice calling agent for businesses. The AI agent answers inbound calls, makes outbound follow-ups, books appointments, answers FAQs, updates CRM/calendar systems, sends reminders, and works 24/7 so businesses never miss another call.
+
+Main message:
+**Never miss another call.**
+A human-like AI voice agent that answers, books, and follows up for your business every hour of every day.
+
+Target customers:
+Business owners, operations leaders, clinics, restaurants, real estate teams, service businesses, and any business that depends on phone calls.
+
+Keep the app simple, premium, clean, and professional. Do not overbuild. First create a working MVP with a beautiful landing page, client portal, and admin dashboard.
+
+Tech stack:
+Use a simple Replit-friendly full-stack setup:
+
+* React or Next.js frontend
+* Node.js/Express backend if needed
+* Database using PostgreSQL, SQLite, or Replit DB
+* Authentication
+* Role-based access control
+* File upload support
+* Invoice/payment tracking
+
+Design style:
+
+* Premium SaaS look
+* Dark/navy/black and white theme with modern accent colors
+* Clean cards, rounded corners, smooth spacing
+* Professional landing page like a modern AI startup
+* Mobile responsive
+* Simple animations only if easy
+* Use placeholder data where needed
+
+Pages and features:
+
+1. Landing Page
+
+Create a beautiful homepage for Aisync.
+
+Sections:
+
+* Hero section:
+
+  * Headline: “Never miss another call.”
+  * Subheadline: “A human-like AI voice agent that answers, books, and follows up for your business — 24/7.”
+  * CTA buttons: “Book a Demo” and “Client Login”
+  * Add a modern visual card showing “Latest Call: Appointment Booked”
+
+* Problem section:
+  Explain that businesses lose customers because calls go unanswered, voicemail gets ignored, and staff cannot always keep up.
+  Mention:
+
+  * Many inbound calls go unanswered during busy hours
+  * Many callers hang up at voicemail
+  * Customers do not want to wait on hold
+
+* Solution section:
+  Introduce Aisync as an AI calling agent that speaks naturally, understands intent, and takes action like the best employee.
+
+* Core features section:
+  Show cards for:
+
+  * Human-like voice
+  * Inbound and outbound calls
+  * Appointment booking
+  * Instant answers
+  * Call summaries and notes
+  * Always available 24/7
+  * Calendar integration
+  * CRM updates
+  * Text/email follow-ups
+
+* How it works section:
+  4 steps:
+
+  1. Connect phone line and tools
+  2. Configure scripts, FAQs, brand voice, and booking rules
+  3. AI speaks naturally with callers
+  4. Bookings, notes, and summaries sync automatically
+
+* Use cases section:
+  Show cards for:
+
+  * Clinics
+  * Restaurants
+  * Real estate
+  * Service trades
+
+* Benefits section:
+  Highlight:
+
+  * 24/7 coverage
+  * More answered calls
+  * Fewer missed opportunities
+  * Lower staffing overhead
+  * Consistent customer experience
+  * Scales without hiring more staff
+
+* Demo/contact section:
+  Add a “Book Your Demo” form with:
+
+  * Name
+  * Business name
+  * Email
+  * Phone
+  * Industry
+  * Message
+  * Submit button
+
+When the form is submitted, save the lead/demo request in the database and show a success message.
+
+2. Authentication
+
+Create simple authentication with two roles:
+
+* Client
+* Admin
+
+Users should be able to:
+
+* Sign up
+* Log in
+* Log out
+
+For MVP, allow demo users:
+Admin:
+email: [admin@aisync.ai](mailto:admin@aisync.ai)
+password: admin123
+
+Client:
+email: [client@demo.com](mailto:client@demo.com)
+password: client123
+
+Protect dashboard routes based on role.
+
+3. Client Login Portal
+
+After a client logs in, show a clean client dashboard.
+
+Client should be able to see:
+
+* Their business name
+* Their ordered Voice AI Agent project
+* Project description
+* Current project status
+* Assigned team members
+* Timeline/progress
+* Invoice and payment information
+* Uploaded files
+* Feature/change requests
+
+Project status stages:
+
+* Onboarding
+* Build Phase
+* Demo Phase
+* Testing
+* Completed
+
+Show status as a visual progress tracker with these steps.
+
+Client dashboard sections:
+
+* Project Overview card
+* Progress Timeline card
+* Assigned Team card
+* Invoice & Payment card
+
+  * Invoice number
+  * Total amount
+  * Paid amount
+  * Due amount
+  * Payment status: Paid, Partial, Due, Overdue
+* Upload Files section
+
+  * Client can upload PDFs, docs, images, or other business information
+  * Save uploaded file metadata
+* Request Changes section
+
+  * Client can submit a small feature/change request
+  * Fields: title, description, priority
+  * Save request in database
+* Recent Updates section
+
+  * Show notes from admin about what is currently happening
+
+4. Admin Dashboard
+
+Admin/manager should be able to log in and manage the business.
+
+Admin dashboard sections:
+
+* Overview metrics:
+
+  * Total clients
+  * Active projects
+  * Completed projects
+  * Total paid amount
+  * Total due amount
+  * Pending feature requests
+
+* Clients table:
+
+  * View all clients
+  * Add new client
+  * Edit client details
+  * View client project
+
+* Projects table:
+
+  * Client name
+  * Project name
+  * Current status
+  * Assigned employees
+  * Payment status
+  * Last updated
+  * Button to update status
+
+* Employees section:
+
+  * Add employee/team member
+  * Name
+  * Role
+  * Email
+  * Assign employees to clients/projects
+
+* Project status update:
+  Admin can update a client project status to:
+
+  * Onboarding
+  * Build Phase
+  * Demo Phase
+  * Testing
+  * Completed
+
+* Uploaded files:
+  Admin can view files uploaded by clients.
+
+* Feature requests:
+  Admin can view all client feature/change requests.
+  Admin can update request status:
+
+  * New
+  * In Review
+  * Approved
+  * Completed
+  * Rejected
+
+* Invoices:
+  Admin can create invoices for clients.
+  Invoice fields:
+
+  * Client
+  * Invoice number
+  * Total amount
+  * Paid amount
+  * Due amount
+  * Status
+  * Due date
+  * Notes
+
+5. Database Models
+
+Create simple database tables/models for:
+
+User:
+
+* id
+* name
+* email
+* password hash
+* role: client or admin
+* createdAt
+
+Client:
+
+* id
+* userId
+* businessName
+* industry
+* phone
+* email
+* notes
+
+Project:
+
+* id
+* clientId
+* projectName
+* description
+* status
+* startDate
+* expectedCompletionDate
+* latestUpdate
+
+Employee:
+
+* id
+* name
+* role
+* email
+
+ProjectAssignment:
+
+* id
+* projectId
+* employeeId
+
+UploadedFile:
+
+* id
+* clientId
+* projectId
+* fileName
+* fileUrl or filePath
+* uploadedAt
+
+FeatureRequest:
+
+* id
+* clientId
+* projectId
+* title
+* description
+* priority
+* status
+* createdAt
+
+Invoice:
+
+* id
+* clientId
+* projectId
+* invoiceNumber
+* totalAmount
+* paidAmount
+* dueAmount
+* status
+* dueDate
+* notes
+* createdAt
+
+DemoRequest:
+
+* id
+* name
+* businessName
+* email
+* phone
+* industry
+* message
+* createdAt
+
+6. MVP Behavior
+
+Use seeded demo data so the app looks complete immediately.
+
+Example client:
+Business Name: Demo Dental Clinic
+Project: 24/7 AI Receptionist
+Status: Build Phase
+Assigned team:
+
+* Ibrahim Saleem — AI Solutions Lead
+* Sarah Khan — Voice Agent Developer
+* Alex Johnson — Client Success Manager
+
+Example invoice:
+Total: $2,500
+Paid: $1,000
+Due: $1,500
+Status: Partial
+
+Example latest update:
+“We have completed onboarding and collected FAQs. The AI voice agent is currently being configured with your booking rules and brand voice.”
+
+7. Important Requirements
+
+* Keep the code simple and organized.
+* Build only the MVP first.
+* Do not add unnecessary complex features.
+* Make everything functional enough for a demo.
+* Use clean reusable components.
+* Add error handling and loading states.
+* Make the UI look premium and trustworthy.
+* Make the landing page beautiful because it is the first impression.
+* Make dashboards simple and easy to understand.
+* Include comments where useful.
+* After building, provide clear instructions on how to run the project in Replit.
+
+Final goal:
+Create a working full-stack MVP for Aisync with:
+
+* Beautiful landing page
+* Demo/contact form
+* Client signup/login
+* Client project tracking portal
+* Admin dashboard
+* Client/project management
+* Employee assignment
+* File upload
+* Feature requests
+* Invoice/payment tracking
