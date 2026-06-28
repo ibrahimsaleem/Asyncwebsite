@@ -8,6 +8,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Trust reverse proxy (e.g. Render load balancer) for secure cookies
+app.set("trust proxy", 1);
+
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET must be set.");
 }
