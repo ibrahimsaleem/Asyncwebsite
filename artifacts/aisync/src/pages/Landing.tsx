@@ -75,28 +75,28 @@ const fadeInUp = {
   initial: { opacity: 0, y: 35 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-120px" },
-  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }
 };
 
 const fadeInLeft = {
   initial: { opacity: 0, x: -50 },
   whileInView: { opacity: 1, x: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }
 };
 
 const fadeInRight = {
   initial: { opacity: 0, x: 50 },
   whileInView: { opacity: 1, x: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }
 };
 
 const scaleIn = {
   initial: { opacity: 0, scale: 0.88 },
   whileInView: { opacity: 1, scale: 1 },
   viewport: { once: true, margin: "-80px" },
-  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] }
+  transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as const }
 };
 
 const staggerContainer = {
@@ -114,7 +114,7 @@ const staggerItem = {
   whileInView: { 
     opacity: 1, 
     y: 0, 
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } 
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } 
   }
 };
 
@@ -455,7 +455,7 @@ export default function Landing() {
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: i * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
                     whileHover={{ x: 6, boxShadow: "0 8px 24px -8px rgba(33,28,22,0.1)" }}
                   >
                     <span className="text-xl mt-0.5">{item.icon}</span>
@@ -834,7 +834,7 @@ export default function Landing() {
                         initial={{ width: 0 }}
                         whileInView={{ width: `${bar.value}%` }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.3 + i * 0.15, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: 0.3 + i * 0.15, duration: 1.2, ease: [0.16, 1, 0.3, 1] as const }}
                       />
                     </div>
                   </div>
@@ -859,7 +859,7 @@ export default function Landing() {
                 initial={{ opacity: 0, x: -20, y: 20 }}
                 whileInView={{ opacity: 1, x: 0, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
                 whileHover={{ scale: 1.05, rotate: -2 }}
               />
             </motion.div>
