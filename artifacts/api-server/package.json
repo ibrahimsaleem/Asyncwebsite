@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm run build && pnpm run start",
+    "dev": "pnpm run build && node --enable-source-maps --env-file=../../.env ./dist/index.mjs",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps --env-file=../../.env ./dist/index.mjs",
+    "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
