@@ -73,11 +73,11 @@ export default function ClientDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
-  const { data: client } = useGetMyClient({ query: { queryKey: getGetMyClientQueryKey() } });
-  const { data: projects } = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
-  const { data: invoices } = useListInvoices({ query: { queryKey: getListInvoicesQueryKey() } });
-  const { data: files } = useListFiles({ query: { queryKey: getListFilesQueryKey() } });
-  const { data: featureRequests } = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
+  const { data: client, isLoading: clientLoading, isError: clientError } = useGetMyClient({ query: { queryKey: getGetMyClientQueryKey() } });
+  const { data: projects, isLoading: projectsLoading } = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
+  const { data: invoices, isLoading: invoicesLoading } = useListInvoices({ query: { queryKey: getListInvoicesQueryKey() } });
+  const { data: files, isLoading: filesLoading } = useListFiles({ query: { queryKey: getListFilesQueryKey() } });
+  const { data: featureRequests, isLoading: requestsLoading } = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
 
   const createRequest = useCreateFeatureRequest();
   const deleteFile = useDeleteFile();
@@ -134,6 +134,28 @@ export default function ClientDashboard() {
     { id: "requests", label: "Requests" },
   ];
 
+  if (clientLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading your dashboard…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (clientError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="text-center max-w-sm">
+          <p className="text-destructive font-semibold mb-2">Failed to load dashboard</p>
+          <p className="text-sm text-muted-foreground">Please refresh the page or contact support.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       {/* Sidebar */}
@@ -173,6 +195,12 @@ export default function ClientDashboard() {
           <div>
             <h1 className="text-3xl font-bold mb-1">Welcome back, {user?.name}</h1>
             <p className="text-muted-foreground mb-8">Here's the latest on your AI agent integration.</p>
+            {(projectsLoading || invoicesLoading) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Loading…
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
               <div className="bg-card border border-border p-6 rounded-xl">

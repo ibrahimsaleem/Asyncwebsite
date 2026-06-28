@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, projectsTable, projectAssignmentsTable, employeesTable, clientsTable } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and } from "drizzle-orm";
 import {
   CreateProjectBody,
   GetProjectParams,
@@ -172,7 +172,12 @@ router.post("/projects/:id/unassign", requireAdmin, async (req, res): Promise<vo
 
   await db
     .delete(projectAssignmentsTable)
-    .where(eq(projectAssignmentsTable.projectId, params.data.id));
+    .where(
+      and(
+        eq(projectAssignmentsTable.projectId, params.data.id),
+        eq(projectAssignmentsTable.employeeId, parsed.data.employeeId)
+      )
+    );
 
   res.json({ success: true });
 });

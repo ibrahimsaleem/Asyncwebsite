@@ -69,7 +69,12 @@ router.post("/files", requireAuth, upload.single("file"), async (req, res): Prom
     return;
   }
 
-  const clientId = client?.id ?? parseInt(req.body.clientId as string, 10);
+  const rawClientId = client?.id ?? parseInt(req.body.clientId as string, 10);
+  if (!rawClientId || Number.isNaN(rawClientId)) {
+    res.status(400).json({ error: "clientId is required" });
+    return;
+  }
+  const clientId = rawClientId;
   const projectId = req.body.projectId ? parseInt(req.body.projectId as string, 10) : null;
 
   let fileName: string;
@@ -102,11 +107,23 @@ router.delete("/files/:id", requireAuth, async (req, res): Promise<void> => {
   }
 
   const [file] = await db.select().from(uploadedFilesTable).where(eq(uploadedFilesTable.id, params.data.id));
-  if (file) {
-    const diskPath = path.resolve(uploadsDir, path.basename(file.filePath));
-    if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
-    await db.delete(uploadedFilesTable).where(eq(uploadedFilesTable.id, params.data.id));
+  if (!file) {
+    res.sendStatus(204);
+    return;
   }
+
+  // Non-admins may only delete their own files
+  if (req.session.userRole !== "admin") {
+    const [client] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
+    if (!client || client.id !== file.clientId) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+  }
+
+  const diskPath = path.resolve(uploadsDir, path.basename(file.filePath));
+  if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
+  await db.delete(uploadedFilesTable).where(eq(uploadedFilesTable.id, params.data.id));
 
   res.sendStatus(204);
 });

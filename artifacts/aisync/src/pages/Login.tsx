@@ -88,11 +88,13 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-border/50 text-xs text-muted-foreground text-center space-y-1">
-          <p className="font-mono bg-secondary/50 px-2 py-1 rounded inline-block mb-2">Demo Credentials</p>
-          <p>Admin: admin@aisync.ai / admin123</p>
-          <p>Client: client@demo.com / client123</p>
-        </div>
+        {import.meta.env.DEV && (
+          <div className="mt-8 pt-6 border-t border-border/50 text-xs text-muted-foreground text-center space-y-1">
+            <p className="font-mono bg-secondary/50 px-2 py-1 rounded inline-block mb-2">Dev Credentials</p>
+            <p>Admin: admin@aisync.ai / admin123</p>
+            <p>Client: client@demo.com / client123</p>
+          </div>
+        )}
       </motion.div>
     </div>
   );

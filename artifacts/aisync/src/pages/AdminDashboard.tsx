@@ -94,13 +94,13 @@ export default function AdminDashboard() {
   const [addingEmp, setAddingEmp] = useState(false);
   const [showEmpForm, setShowEmpForm] = useState(false);
 
-  const { data: summary } = useGetAdminSummary({ query: { queryKey: getGetAdminSummaryQueryKey() } });
-  const { data: clients } = useListClients({ query: { queryKey: getListClientsQueryKey() } });
-  const { data: projects } = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
-  const { data: employees } = useListEmployees({ query: { queryKey: getListEmployeesQueryKey() } });
-  const { data: invoices } = useListInvoices({ query: { queryKey: getListInvoicesQueryKey() } });
-  const { data: featureRequests } = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
-  const { data: demoRequests } = useListDemoRequests({ query: { queryKey: getListDemoRequestsQueryKey() } });
+  const { data: summary, isLoading: summaryLoading, isError: summaryError } = useGetAdminSummary({ query: { queryKey: getGetAdminSummaryQueryKey() } });
+  const { data: clients, isLoading: clientsLoading } = useListClients({ query: { queryKey: getListClientsQueryKey() } });
+  const { data: projects, isLoading: projectsLoading } = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
+  const { data: employees, isLoading: employeesLoading } = useListEmployees({ query: { queryKey: getListEmployeesQueryKey() } });
+  const { data: invoices, isLoading: invoicesLoading } = useListInvoices({ query: { queryKey: getListInvoicesQueryKey() } });
+  const { data: featureRequests, isLoading: requestsLoading } = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
+  const { data: demoRequests, isLoading: demoLoading } = useListDemoRequests({ query: { queryKey: getListDemoRequestsQueryKey() } });
 
   const createClient = useCreateClient();
   const createProject = useCreateProject();
@@ -193,6 +193,28 @@ export default function AdminDashboard() {
     { id: "demo-leads", label: "Demo Leads" },
   ];
 
+  if (summaryLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading admin panel…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (summaryError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="text-center max-w-sm">
+          <p className="text-destructive font-semibold mb-2">Failed to load admin panel</p>
+          <p className="text-sm text-muted-foreground">Please refresh the page or contact support.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       {/* Sidebar */}
@@ -277,7 +299,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h1 className="text-3xl font-bold mb-1">Clients</h1>
-                <p className="text-muted-foreground">All client accounts.</p>
+                <p className="text-muted-foreground">All client accounts.{clientsLoading && " Loading…"}</p>
               </div>
               <button
                 onClick={() => setShowClientForm((v) => !v)}
@@ -539,7 +561,7 @@ export default function AdminDashboard() {
                     {invoices.map((inv, i) => (
                       <tr key={inv.id} className={`border-b border-border/30 ${i % 2 === 0 ? "" : "bg-secondary/10"}`}>
                         <td className="px-5 py-3 text-muted-foreground">{inv.id}</td>
-                        <td className="px-5 py-3">{inv.clientId}</td>
+                        <td className="px-5 py-3">{inv.clientBusinessName ?? inv.clientId}</td>
                         <td className="px-5 py-3 font-medium">${parseFloat(String(inv.totalAmount)).toLocaleString()}</td>
                         <td className="px-5 py-3 text-emerald-400">${parseFloat(String(inv.paidAmount)).toLocaleString()}</td>
                         <td className="px-5 py-3 text-destructive">${parseFloat(String(inv.dueAmount)).toLocaleString()}</td>
