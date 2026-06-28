@@ -70,6 +70,33 @@ const PRESETS: CallPreset[] = [
   }
 ];
 
+// Animation constants
+const fadeInUp = {
+  initial: { opacity: 0, y: 35 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-120px" },
+  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+};
+
+const staggerContainer = {
+  initial: {},
+  whileInView: {
+    transition: {
+      staggerChildren: 0.08
+    }
+  },
+  viewport: { once: true, margin: "-100px" }
+};
+
+const staggerItem = {
+  initial: { opacity: 0, y: 25 },
+  whileInView: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } 
+  }
+};
+
 export default function Landing() {
   const [formData, setFormData] = useState({
     name: "", businessName: "", email: "", phone: "", industry: "Clinics & healthcare", message: ""
@@ -136,8 +163,10 @@ export default function Landing() {
   const starterNote = isAnnual ? "Billed annually ($468/yr)" : "Billed month-to-month";
   const growthNote = isAnnual ? "Billed annually ($1,428/yr)" : "Billed month-to-month";
 
+  const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+
   return (
-    <div style={{ background: "#F6F1E9", color: "#211C16", fontFamily: "'Hanken Grotesk', sans-serif" }} className="min-h-screen overflow-x-hidden">
+    <div style={{ background: "#F6F1E9", color: "#211C16", fontFamily: "'Hanken Grotesk', sans-serif" }} className="min-h-screen overflow-x-hidden selection:bg-[#B8502E]/20">
       
       {/* ===== NAV ===== */}
       <nav className="sticky top-0 z-50 bg-[#F6F1E9]/85 backdrop-blur-md border-b border-[#E4D9C9] transition-all">
@@ -148,15 +177,15 @@ export default function Landing() {
           </div>
           
           <div className="hidden md:flex items-center gap-[30px] text-sm font-medium text-[#6B6155]">
-            <a href="#how" className="hover:text-[#211C16] transition-colors">How it works</a>
-            <a href="#uses" className="hover:text-[#211C16] transition-colors">Use cases</a>
-            <a href="#roi" className="hover:text-[#211C16] transition-colors">ROI</a>
-            <a href="#pricing" className="hover:text-[#211C16] transition-colors">Pricing</a>
-            <Link href="/login" className="hover:text-[#211C16] transition-colors">Client login</Link>
-            <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all">Book a demo</a>
+            <a href="#how" className="hover:text-[#211C16] transition-colors duration-200">How it works</a>
+            <a href="#uses" className="hover:text-[#211C16] transition-colors duration-200">Use cases</a>
+            <a href="#roi" className="hover:text-[#211C16] transition-colors duration-200">ROI</a>
+            <a href="#pricing" className="hover:text-[#211C16] transition-colors duration-200">Pricing</a>
+            <Link href="/login" className="hover:text-[#211C16] transition-colors duration-200">Client login</Link>
+            <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">Book a demo</a>
           </div>
 
-          {/* Simple Mobile Nav Trigger (just scrolls to demo) */}
+          {/* Simple Mobile Nav Trigger */}
           <div className="md:hidden flex items-center gap-3">
             <Link href="/login" className="text-xs font-semibold text-[#6B6155] px-2 py-1">Login</Link>
             <a href="#demo" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Book Demo</a>
@@ -169,7 +198,11 @@ export default function Landing() {
         <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-14 items-center">
           
           {/* Hero Content Left */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
             <div className="inline-flex items-center gap-[9px] text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold mb-[26px]">
               <span className="w-[22px] h-[1px] bg-[#B8502E]"></span> A voice that sounds human
             </div>
@@ -183,37 +216,42 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-wrap items-center gap-6">
-              <a href="#demo" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:opacity-90 transition-opacity">
+              <a href="#demo" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 transform hover:scale-[1.02]">
                 Hear it answer a call
               </a>
-              <Link href="/login" className="inline-flex items-center gap-2 font-semibold text-[15px] border-b-[1.5px] border-[#211C16] pb-[3px] text-[#211C16] hover:opacity-80 transition-opacity">
+              <Link href="/login" className="inline-flex items-center gap-2 font-semibold text-[15px] border-b-[1.5px] border-[#211C16] pb-[3px] text-[#211C16] hover:text-[#B8502E] hover:border-[#B8502E] transition-all duration-200">
                 Client login →
               </Link>
             </div>
             
             <div className="flex items-center gap-3.5 mt-12 pt-7 border-t border-[#E4D9C9]">
-              <div className="flex">
-                <span className="w-9 h-9 rounded-full bg-[#D9C4A8] border-2 border-[#F6F1E9]"></span>
-                <span className="w-9 h-9 rounded-full bg-[#C9A98A] border-2 border-[#F6F1E9] -ml-2.5"></span>
-                <span className="w-9 h-9 rounded-full bg-[#B8966F] border-2 border-[#F6F1E9] -ml-2.5"></span>
+              <div className="flex -space-x-2.5">
+                <img src={`${baseUrl}/images/avatar_1.png`} alt="Client 1" className="w-9 h-9 rounded-full border-2 border-[#F6F1E9] object-cover" />
+                <img src={`${baseUrl}/images/avatar_2.png`} alt="Client 2" className="w-9 h-9 rounded-full border-2 border-[#F6F1E9] object-cover" />
+                <img src={`${baseUrl}/images/avatar_3.png`} alt="Client 3" className="w-9 h-9 rounded-full border-2 border-[#F6F1E9] object-cover" />
               </div>
               <p className="text-[13.5px] text-[#6B6155] m-0 leading-[1.45]">
                 Trusted by <b className="text-[#211C16]">200+</b> clinics, studios<br />&amp; service teams nationwide.
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Transcript Device Right */}
-          <div className="flex flex-col gap-4">
+          <motion.div 
+            className="flex flex-col gap-4"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          >
             {/* Industry Pills Selector */}
             <div className="flex flex-wrap gap-1.5 p-1 bg-[#FFFDF9]/60 rounded-xl border border-[#E9DFCE] max-w-full">
               {PRESETS.map((preset, idx) => (
                 <button
                   key={idx}
                   onClick={() => setPresetIndex(idx)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer transform hover:scale-[1.02] ${
                     presetIndex === idx
-                      ? "bg-[#211C16] text-[#F6F1E9]"
+                      ? "bg-[#211C16] text-[#F6F1E9] shadow-sm"
                       : "text-[#6B6155] hover:text-[#211C16]"
                   }`}
                 >
@@ -224,7 +262,7 @@ export default function Landing() {
             </div>
 
             {/* Transcript Card Container */}
-            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[28px] shadow-[0_28px_56px_-30px_rgba(33,28,22,0.4)] relative overflow-hidden">
+            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[28px] shadow-[0_28px_56px_-30px_rgba(33,28,22,0.4)] relative overflow-hidden transform-gpu">
               <div className="flex items-center justify-between pb-4 border-b border-[#EFE7D8]">
                 <div className="flex items-center gap-[9px]">
                   <span className="w-2 h-2 rounded-full bg-[#4F9D69] animate-blip"></span>
@@ -245,7 +283,7 @@ export default function Landing() {
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.35, ease: "easeOut" }}
                       >
                         <div className="text-[11px] tracking-[0.12em] uppercase font-bold mb-1.5" style={{ color: isAgent ? "#6B6155" : "#B8502E" }}>
                           {isAgent ? "Aisync" : "Caller"}
@@ -260,7 +298,7 @@ export default function Landing() {
               </div>
 
               {/* Animated Wave visualizer */}
-              <div className="flex items-end gap-[3px] h-8 my-5">
+              <div className="flex items-end gap-[3px] h-8 my-5 transform-gpu">
                 {Array.from({ length: 24 }).map((_, i) => (
                   <span
                     key={i}
@@ -281,6 +319,7 @@ export default function Landing() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
                     className="flex items-center gap-2.5 bg-[#F0F6F1] border border-[#D6E7DA] rounded-xl px-[15px] py-[13px]"
                   >
                     <span className="w-5 h-5 rounded-full bg-[#4F9D69] text-white flex items-center justify-center text-[12px] font-bold">✓</span>
@@ -316,12 +355,15 @@ export default function Landing() {
               </div>
 
             </div>
-          </div>
+          </motion.div>
 
         </div>
 
         {/* trust strip */}
-        <div className="flex flex-col md:flex-row items-center justify-between mt-14 py-6 border-y border-[#E4D9C9] gap-4">
+        <motion.div 
+          className="flex flex-col md:flex-row items-center justify-between mt-14 py-6 border-y border-[#E4D9C9] gap-4"
+          {...fadeInUp}
+        >
           <span className="text-[12px] tracking-[0.12em] uppercase text-[#9A8F7E] font-bold text-center md:text-left">Works with the tools you already use</span>
           <div style={{ fontFamily: "'Newsreader', serif" }} className="flex flex-wrap justify-center items-center gap-8 text-[18px] text-[#6B6155] font-normal">
             <span>Google Calendar</span>
@@ -330,11 +372,14 @@ export default function Landing() {
             <span>Calendly</span>
             <span>Salesforce</span>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ===== PROBLEM ===== */}
-      <section className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+      <motion.section 
+        className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20"
+        {...fadeInUp}
+      >
         <div className="max-w-[680px] mb-14">
           <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">The cost of a ringing phone</span>
           <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] tracking-[-0.01em] mt-[18px] mb-0">
@@ -362,12 +407,12 @@ export default function Landing() {
             </p>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ===== FEATURES ===== */}
       <section style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
         <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
-          <div className="max-w-[620px] mb-12">
+          <motion.div className="max-w-[620px] mb-12" {...fadeInUp}>
             <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">One agent, every call</span>
             <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-4">
               Like your best front-desk employee — who never takes a day off.
@@ -375,9 +420,14 @@ export default function Landing() {
             <p className="text-[17px] text-[#564C40] leading-[1.55] m-0">
               Aisync speaks naturally, understands what the caller actually wants, and takes the action a good employee would.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <motion.div 
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-5"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="whileInView"
+          >
             {[
               { num: "01", title: "Human-like voice", desc: "Natural pacing, warm inflection, real listening. Callers rarely realize it's AI." },
               { num: "02", title: "Inbound & outbound", desc: "Answers reservations and questions, and makes warm follow-up calls on your behalf." },
@@ -386,69 +436,102 @@ export default function Landing() {
               { num: "05", title: "Summaries & notes", desc: "Every call comes back as a tidy summary with the caller's intent and next steps." },
               { num: "06", title: "Calendar & CRM sync", desc: "Bookings, contacts, and follow-ups flow into the systems you already run on." }
             ].map((feat, idx) => (
-              <div key={idx} style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-xl p-[30px] hover:shadow-md transition-shadow">
+              <motion.div 
+                key={idx} 
+                style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} 
+                className="rounded-xl p-[30px] shadow-sm transform-gpu"
+                variants={staggerItem}
+                whileHover={{ y: -6, scale: 1.01, boxShadow: "0 18px 36px -12px rgba(33,28,22,0.12)" }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
                 <div style={{ fontFamily: "'Newsreader', serif" }} className="italic text-[15px] text-[#B8502E] mb-[18px]">{feat.num}</div>
                 <h3 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[26px] mb-2.5">{feat.title}</h3>
                 <p className="text-[14.5px] text-[#6B6155] leading-[1.55] m-0">{feat.desc}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
       <section id="how" className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
-        <div className="max-w-[620px] mb-14">
+        <motion.div className="max-w-[620px] mb-14" {...fadeInUp}>
           <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Live in an afternoon</span>
           <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-0">
             Four steps from ringing phone to handled call.
           </h2>
-        </div>
+        </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <motion.div 
+          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="whileInView"
+        >
           {[
             { step: "1", title: "Connect your line", desc: "Forward your missed or busy calls to your Aisync number, and link your tools." },
             { step: "2", title: "Configure the agent", desc: "Set your scripts, FAQs, booking rules, and brand voice in the portal." },
             { step: "3", title: "It speaks naturally", desc: "The AI greets callers, understands intent, and handles the conversation warmly." },
             { step: "4", title: "Everything syncs", desc: "Bookings, notes, and summaries land in your calendar and inbox automatically." }
           ].map((item, idx) => (
-            <div key={idx} className="border-t-2 border-[#211C16] pt-[22px]">
+            <motion.div key={idx} className="border-t-2 border-[#211C16] pt-[22px]" variants={staggerItem}>
               <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[40px] leading-none mb-3.5">{item.step}</div>
               <h3 className="text-[18px] font-bold mb-2">{item.title}</h3>
               <p className="text-[14px] text-[#6B6155] leading-[1.55] m-0">{item.desc}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ===== USE CASES ===== */}
       <section id="uses" style={{ background: "#211C16", color: "#F6F1E9" }}>
         <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
-          <div className="max-w-[620px] mb-12">
+          <motion.div className="max-w-[620px] mb-12" {...fadeInUp}>
             <span className="text-xs tracking-[0.16em] uppercase text-[#E0A98A] font-bold">Built for businesses that run on the phone</span>
             <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-0 text-[#F6F1E9]">
               Wherever a missed call costs you money.
             </h2>
-          </div>
+          </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#3A322A] border border-[#3A322A] rounded-2xl overflow-hidden">
+          <motion.div 
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#3A322A] border border-[#3A322A] rounded-2xl overflow-hidden"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="whileInView"
+          >
             {[
-              { title: "Clinics", desc: "Book checkups, handle reschedules, and answer insurance questions without tying up the front desk." },
-              { title: "Restaurants", desc: "Take reservations during the dinner rush, confirm party sizes, and never drop a booking." },
-              { title: "Real estate", desc: "Schedule viewings, qualify leads, and email listing details the moment someone calls." },
-              { title: "Service trades", desc: "Capture job requests on the road, book site visits, and follow up on every quote." }
+              { title: "Clinics", img: "usecase_clinics.png", desc: "Book checkups, handle reschedules, and answer insurance questions without tying up the front desk." },
+              { title: "Restaurants", img: "usecase_restaurants.png", desc: "Take reservations during the dinner rush, confirm party sizes, and never drop a booking." },
+              { title: "Real estate", img: "usecase_realestate.png", desc: "Schedule viewings, qualify leads, and email listing details the moment someone calls." },
+              { title: "Service trades", img: "usecase_trades.png", desc: "Capture job requests on the road, book site visits, and follow up on every quote." }
             ].map((use, idx) => (
-              <div key={idx} className="bg-[#211C16] p-[34px_28px]">
-                <div style={{ fontFamily: "'Newsreader', serif" }} className="italic text-[22px] text-[#E0A98A] mb-[18px]">{use.title}</div>
+              <motion.div 
+                key={idx} 
+                className="bg-[#211C16] p-[34px_28px] flex flex-col items-start transform-gpu cursor-pointer"
+                variants={staggerItem}
+                whileHover={{ scale: 1.02, backgroundColor: "#27221b" }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <img 
+                  src={`${baseUrl}/images/${use.img}`} 
+                  alt={use.title} 
+                  loading="lazy"
+                  className="w-14 h-14 object-contain mb-5 rounded-lg border border-[#3A322A] p-2 bg-[#FFFDF9]/5 mix-blend-lighten"
+                />
+                <div style={{ fontFamily: "'Newsreader', serif" }} className="italic text-[22px] text-[#E0A98A] mb-3">{use.title}</div>
                 <p className="text-[14px] text-[#C6BBAC] leading-[1.6] m-0">{use.desc}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ===== ROI CALCULATOR ===== */}
-      <section id="roi" className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
+      <motion.section 
+        id="roi" 
+        className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20"
+        {...fadeInUp}
+      >
         <div className="max-w-[620px] mb-12">
           <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Do the math</span>
           <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-4">
@@ -461,7 +544,7 @@ export default function Landing() {
 
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 items-stretch">
           {/* Sliders Left */}
-          <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[36px] flex flex-col justify-center">
+          <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[36px] flex flex-col justify-center shadow-sm">
             
             {/* Missed Calls Slider */}
             <div className="mb-8">
@@ -518,7 +601,7 @@ export default function Landing() {
           </div>
 
           {/* Projection Card Right */}
-          <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[36px] flex flex-col justify-between">
+          <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[36px] flex flex-col justify-between shadow-xl">
             <div>
               <span className="text-[12px] tracking-[0.14em] uppercase text-[#E0A98A] font-bold">Monthly projection</span>
               
@@ -532,27 +615,27 @@ export default function Landing() {
               <div className="flex gap-10 mt-7 pt-6 border-t border-[#3A322A]">
                 <div>
                   <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] sm:text-[34px] text-[#E0A98A] leading-none">{recoveredLeads}</div>
-                  <div className="text-[12.5px] text-[#C6BBAC] mt-1">extra bookings</div>
+                  <div className="text-[12.5px] text-[#C6BBAC] mt-1 font-sans">extra bookings</div>
                 </div>
                 <div>
                   <div style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] sm:text-[34px] text-[#E0A98A] leading-none">{roiMultiplier}×</div>
-                  <div className="text-[12.5px] text-[#C6BBAC] mt-1 font-sans">return vs. cost</div>
+                  <div className="text-[12.5px] text-[#C6BBAC] mt-1 font-sans font-normal">return vs. cost</div>
                 </div>
               </div>
             </div>
 
-            <a href="#demo" className="mt-8 block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] hover:opacity-95 transition-opacity">
+            <a href="#demo" className="mt-8 block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#8f391e] transition-all duration-300 transform hover:scale-[1.01]">
               Recapture this revenue
             </a>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ===== PRICING ===== */}
       <section id="pricing" style={{ background: "#F1EADD" }} className="border-y border-[#E4D9C9]">
         <div className="max-w-[1180px] mx-auto px-6 md:px-14 py-16 md:py-20">
           
-          <div className="text-center mb-11">
+          <motion.div className="text-center mb-11" {...fadeInUp}>
             <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Simple plans</span>
             <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-6">
               Pricing that scales with your phone.
@@ -573,7 +656,7 @@ export default function Landing() {
                   cursor: "pointer",
                   fontFamily: "'Hanken Grotesk', sans-serif"
                 }}
-                className="transition-all"
+                className="transition-all duration-200"
               >
                 Monthly
               </button>
@@ -590,16 +673,27 @@ export default function Landing() {
                   cursor: "pointer",
                   fontFamily: "'Hanken Grotesk', sans-serif"
                 }}
-                className="transition-all"
+                className="transition-all duration-200"
               >
                 Annual · save 20%
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid lg:grid-cols-3 gap-5 items-stretch">
+          <motion.div 
+            className="grid lg:grid-cols-3 gap-5 items-stretch"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="whileInView"
+          >
             {/* Starter Plan */}
-            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[34px] flex flex-col justify-between">
+            <motion.div 
+              style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} 
+              className="rounded-2xl p-[34px] flex flex-col justify-between shadow-sm transform-gpu"
+              variants={staggerItem}
+              whileHover={{ y: -5 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
               <div>
                 <span className="text-[12px] tracking-[0.12em] uppercase text-[#6B6155] font-bold">Starter</span>
                 <div className="flex items-baseline gap-1.5 mt-[18px] mb-1">
@@ -617,13 +711,18 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all">
+              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">
                 Get started
               </a>
-            </div>
+            </motion.div>
 
             {/* Growth Plan (Popular) */}
-            <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[34px] flex flex-col justify-between relative">
+            <motion.div 
+              className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[34px] flex flex-col justify-between relative shadow-lg transform-gpu"
+              variants={staggerItem}
+              whileHover={{ y: -7 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
               <span style={{ fontFamily: "'Newsreader', serif" }} className="absolute top-6 right-6 italic text-[14px] text-[#E0A98A]">Most popular</span>
               <div>
                 <span className="text-[12px] tracking-[0.12em] uppercase text-[#E0A98A] font-bold">Growth</span>
@@ -643,13 +742,19 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <a href="#demo" className="mt-auto block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[14px] hover:opacity-95 transition-opacity">
+              <a href="#demo" className="mt-auto block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[14px] hover:bg-[#8f391e] transition-all duration-300">
                 Get started today
               </a>
-            </div>
+            </motion.div>
 
             {/* Enterprise Plan */}
-            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[34px] flex flex-col justify-between">
+            <motion.div 
+              style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} 
+              className="rounded-2xl p-[34px] flex flex-col justify-between shadow-sm transform-gpu"
+              variants={staggerItem}
+              whileHover={{ y: -5 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
               <div>
                 <span className="text-[12px] tracking-[0.12em] uppercase text-[#6B6155] font-bold">Enterprise</span>
                 <div className="flex items-baseline mt-[18px] mb-1">
@@ -667,25 +772,29 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all">
+              <a href="#demo" style={{ border: "1px solid #211C16" }} className="mt-auto block text-center text-[#211C16] py-3 rounded-full font-semibold text-[14px] hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">
                 Contact sales
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
         </div>
       </section>
 
       {/* ===== FAQ ===== */}
       <section id="faq" className="max-w-[760px] mx-auto px-6 md:px-14 py-16 md:py-20">
-        <div className="text-center mb-12">
+        <motion.div className="text-center mb-12" {...fadeInUp}>
           <span className="text-xs tracking-[0.16em] uppercase text-[#B8502E] font-bold">Good questions</span>
           <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[50px] leading-[1.05] mt-[18px] mb-0">
             Frequently asked.
           </h2>
-        </div>
+        </motion.div>
 
-        <div>
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="whileInView"
+        >
           {[
             {
               q: "Does the AI really sound like a person?",
@@ -708,7 +817,7 @@ export default function Landing() {
               a: "Starter and Growth are month-to-month — cancel or change plans anytime, no penalty. Annual billing is available if you'd like to lock in savings."
             }
           ].map((faq, idx) => (
-            <div key={idx} className="border-t border-[#E4D9C9] last:border-b last:border-[#E4D9C9]">
+            <motion.div key={idx} className="border-t border-[#E4D9C9] last:border-b last:border-[#E4D9C9]" variants={staggerItem}>
               <button
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                 className="w-full bg-none border-none py-6 flex justify-between items-center cursor-pointer text-left focus:outline-none"
@@ -725,7 +834,7 @@ export default function Landing() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
                     <p style={{ fontFamily: "'Newsreader', serif" }} className="text-[17px] leading-[1.6] text-[#564C40] m-0 pb-[26px]">
@@ -734,9 +843,9 @@ export default function Landing() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ===== DEMO REQUEST FORM ===== */}
@@ -745,7 +854,7 @@ export default function Landing() {
           <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-16 items-start">
             
             {/* Demo Side Info */}
-            <div>
+            <motion.div {...fadeInUp}>
               <span className="text-[12px] tracking-[0.16em] uppercase text-[#E0A98A] font-bold">Book your demo</span>
               <h2 style={{ fontFamily: "'Instrument Serif', serif" }} className="font-normal text-[38px] sm:text-[52px] leading-[1.04] mt-[18px] mb-[22px] text-[#F6F1E9]">
                 Hear your own agent answer a call.
@@ -765,10 +874,14 @@ export default function Landing() {
                   <span className="text-[#E0A98A] font-bold">—</span> No commitment, no card
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Demo Form Container */}
-            <div style={{ background: "#FFFDF9" }} className="rounded-2xl p-[36px] text-[#211C16]">
+            <motion.div 
+              style={{ background: "#FFFDF9" }} 
+              className="rounded-2xl p-[36px] text-[#211C16] shadow-2xl"
+              {...fadeInUp}
+            >
               {submitted ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -869,13 +982,13 @@ export default function Landing() {
 
                   <button
                     type="submit"
-                    className="bg-[#211C16] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] cursor-pointer hover:opacity-90 transition-opacity mt-2"
+                    className="bg-[#211C16] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] cursor-pointer hover:bg-[#B8502E] transition-all duration-300 mt-2"
                   >
                     Request my demo
                   </button>
                 </form>
               )}
-            </div>
+            </motion.div>
 
           </div>
         </div>
