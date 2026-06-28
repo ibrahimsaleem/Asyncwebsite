@@ -58,4 +58,16 @@ app.use("/api/uploads", express.static(uploadsDir));
 
 app.use("/api", router);
 
+// Serve built frontend statically in production
+const frontendDistDir = path.resolve(workspaceRoot, "artifacts/aisync/dist/public");
+app.use(express.static(frontendDistDir));
+
+// Fallback for React client-side routing (Single Page Application)
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return next();
+  }
+  res.sendFile(path.join(frontendDistDir, "index.html"));
+});
+
 export default app;
