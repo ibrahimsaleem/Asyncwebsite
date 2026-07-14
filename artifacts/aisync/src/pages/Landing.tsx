@@ -203,12 +203,24 @@ export default function Landing() {
             <a href="#how" className="hover:text-[#211C16] transition-colors duration-200">How it works</a>
             <a href="#uses" className="hover:text-[#211C16] transition-colors duration-200">Use cases</a>
             <a href="#roi" className="hover:text-[#211C16] transition-colors duration-200">ROI</a>
+            <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[#25D366] hover:text-[#20ba5a] transition-colors duration-200 font-semibold">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.588 1.45 5.416 1.451 5.44.002 9.865-4.422 9.869-9.866.002-2.637-1.023-5.116-2.887-6.98C17.18 1.892 14.7 1.868 12.008 1.868c-5.444 0-9.87 4.426-9.875 9.87-.001 1.862.486 3.685 1.411 5.289l-.927 3.39 3.488-.915c1.554.848 3.3.13 4.942-.748zm10.743-3.418c-.294-.148-1.743-.86-2.012-.958-.268-.098-.463-.148-.658.148-.195.295-.756.958-.927 1.155-.17.196-.341.22-.635.073-.294-.148-1.243-.458-2.37-1.462-.877-.783-1.47-1.75-1.642-2.045-.17-.295-.018-.454.13-.601.132-.132.294-.343.44-.515.147-.171.196-.294.294-.49.098-.197.049-.369-.024-.516-.073-.148-.659-1.593-.903-2.18-.238-.574-.479-.496-.658-.505-.17-.008-.366-.01-.562-.01-.195 0-.513.073-.78.368-.269.294-1.025 1.006-1.025 2.451 0 1.446 1.05 2.844 1.196 3.04.147.197 2.067 3.158 5.01 4.43.7.303 1.248.484 1.674.62.704.224 1.346.193 1.854.117.565-.085 1.743-.712 1.988-1.4.244-.687.244-1.275.17-1.4-.072-.124-.268-.196-.562-.344z"/>
+              </svg>
+              <span>+1 7138537974</span>
+            </a>
             <Link href="/login" className="hover:text-[#211C16] transition-colors duration-200">Client login</Link>
             <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">Request Custom Agent</a>
           </div>
 
           {/* Simple Mobile Nav Trigger */}
           <div className="md:hidden flex items-center gap-3">
+            <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="text-xs text-[#25D366] font-semibold flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.588 1.45 5.416 1.451 5.44.002 9.865-4.422 9.869-9.866.002-2.637-1.023-5.116-2.887-6.98C17.18 1.892 14.7 1.868 12.008 1.868c-5.444 0-9.87 4.426-9.875 9.87-.001 1.862.486 3.685 1.411 5.289l-.927 3.39 3.488-.915c1.554.848 3.3.13 4.942-.748zm10.743-3.418c-.294-.148-1.743-.86-2.012-.958-.268-.098-.463-.148-.658.148-.195.295-.756.958-.927 1.155-.17.196-.341.22-.635.073-.294-.148-1.243-.458-2.37-1.462-.877-.783-1.47-1.75-1.642-2.045-.17-.295-.018-.454.13-.601.132-.132.294-.343.44-.515.147-.171.196-.294.294-.49.098-.197.049-.369-.024-.516-.073-.148-.659-1.593-.903-2.18-.238-.574-.479-.496-.658-.505-.17-.008-.366-.01-.562-.01-.195 0-.513.073-.78.368-.269.294-1.025 1.006-1.025 2.451 0 1.446 1.05 2.844 1.196 3.04.147.197 2.067 3.158 5.01 4.43.7.303 1.248.484 1.674.62.704.224 1.346.193 1.854.117.565-.085 1.743-.712 1.988-1.4.244-.687.244-1.275.17-1.4-.072-.124-.268-.196-.562-.344z"/>
+              </svg>
+              <span>Chat</span>
+            </a>
             <Link href="/login" className="text-xs font-semibold text-[#6B6155] px-2 py-1">Login</Link>
             <a href="#demo" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Request Agent</a>
           </div>
@@ -237,9 +249,15 @@ export default function Landing() {
               A warm, human-sounding AI receptionist that answers every call, books the appointment, and follows up — at 2pm or 2am.
             </p>
             
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center gap-4">
               <a href="#demo" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 transform hover:scale-[1.02]">
                 Hear it answer a call
+              </a>
+              <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="bg-[#25D366] text-[#FFFDF9] px-[26px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#20ba5a] transition-all duration-300 transform hover:scale-[1.02] flex items-center gap-2 shadow-sm">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.588 1.45 5.416 1.451 5.44.002 9.865-4.422 9.869-9.866.002-2.637-1.023-5.116-2.887-6.98C17.18 1.892 14.7 1.868 12.008 1.868c-5.444 0-9.87 4.426-9.875 9.87-.001 1.862.486 3.685 1.411 5.289l-.927 3.39 3.488-.915c1.554.848 3.3.13 4.942-.748zm10.743-3.418c-.294-.148-1.743-.86-2.012-.958-.268-.098-.463-.148-.658.148-.195.295-.756.958-.927 1.155-.17.196-.341.22-.635.073-.294-.148-1.243-.458-2.37-1.462-.877-.783-1.47-1.75-1.642-2.045-.17-.295-.018-.454.13-.601.132-.132.294-.343.44-.515.147-.171.196-.294.294-.49.098-.197.049-.369-.024-.516-.073-.148-.659-1.593-.903-2.18-.238-.574-.479-.496-.658-.505-.17-.008-.366-.01-.562-.01-.195 0-.513.073-.78.368-.269.294-1.025 1.006-1.025 2.451 0 1.446 1.05 2.844 1.196 3.04.147.197 2.067 3.158 5.01 4.43.7.303 1.248.484 1.674.62.704.224 1.346.193 1.854.117.565-.085 1.743-.712 1.988-1.4.244-.687.244-1.275.17-1.4-.072-.124-.268-.196-.562-.344z"/>
+                </svg>
+                WhatsApp Chat
               </a>
               <Link href="/login" className="inline-flex items-center gap-2 font-semibold text-[15px] border-b-[1.5px] border-[#211C16] pb-[3px] text-[#211C16] hover:text-[#B8502E] hover:border-[#B8502E] transition-all duration-200">
                 Client login →
@@ -962,6 +980,18 @@ export default function Landing() {
                   <span className="text-[#E0A98A] font-bold">—</span> Fully integrated with your existing tools
                 </div>
               </div>
+
+              <div className="mt-10 pt-8 border-t border-[#3D352B]">
+                <p className="text-[14px] text-[#C6BBAC] mb-4">Or connect with us directly right now:</p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <a href="tel:+17138537974" className="inline-flex items-center gap-2.5 text-sm font-semibold text-[#F6F1E9] bg-[#3A3229] hover:bg-[#4D4337] px-5 py-3 rounded-full transition-all">
+                    📞 Call: +1 (713) 853-7974
+                  </a>
+                  <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2.5 text-sm font-semibold text-[#25D366] border border-[#25D366] hover:bg-[#25D366] hover:text-white px-5 py-3 rounded-full transition-all">
+                    💬 WhatsApp Chat
+                  </a>
+                </div>
+              </div>
             </motion.div>
 
             {/* Demo Form Container */}
@@ -1089,10 +1119,12 @@ export default function Landing() {
           <span className="w-1.5 h-1.5 rounded-full bg-[#B8502E] translate-y-[-2px] inline-block"></span>
         </div>
         <p className="text-[13px] text-[#9A8F7E] m-0 text-center sm:text-left">© 2026 Aisync — never miss another call.</p>
-        <div className="flex gap-6 text-[13px] text-[#6B6155]">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#6B6155] justify-center sm:justify-start">
           <span className="cursor-pointer hover:text-[#211C16] transition-colors">Privacy</span>
           <span className="cursor-pointer hover:text-[#211C16] transition-colors">Terms</span>
-          <span className="cursor-pointer hover:text-[#211C16] transition-colors">Contact</span>
+          <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="hover:text-[#211C16] transition-colors flex items-center gap-1">
+            <span>WhatsApp: +1 7138537974</span>
+          </a>
         </div>
       </footer>
 
