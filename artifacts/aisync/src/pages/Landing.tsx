@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { useCreateDemoRequest } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
+import { MainDemoVideo, DemoLibrary } from "@/components/VideoDemos";
 import { 
   Volume2, Play, CheckCircle2, ChevronDown, Check, Star, ArrowRight, Pause
 } from "lucide-react";
@@ -200,6 +201,8 @@ export default function Landing() {
           </div>
           
           <div className="hidden md:flex items-center gap-[30px] text-sm font-medium text-[#6B6155]">
+            <a href="#watch" className="hover:text-[#211C16] transition-colors duration-200">Watch demo</a>
+            <a href="#demos" className="hover:text-[#211C16] transition-colors duration-200">Demos</a>
             <a href="#how" className="hover:text-[#211C16] transition-colors duration-200">How it works</a>
             <a href="#uses" className="hover:text-[#211C16] transition-colors duration-200">Use cases</a>
             <a href="#roi" className="hover:text-[#211C16] transition-colors duration-200">ROI</a>
@@ -250,7 +253,7 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-wrap items-center gap-4">
-              <a href="#demo" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 transform hover:scale-[1.02]">
+              <a href="#watch" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 transform hover:scale-[1.02]">
                 Hear it answer a call
               </a>
               <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="bg-[#25D366] text-[#FFFDF9] px-[26px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#20ba5a] transition-all duration-300 transform hover:scale-[1.02] flex items-center gap-2 shadow-sm">
@@ -414,6 +417,9 @@ export default function Landing() {
           </div>
         </motion.div>
       </section>
+
+      {/* ===== MAIN DEMO VIDEO ===== */}
+      <MainDemoVideo />
 
       {/* ===== PROBLEM ===== */}
       <motion.section 
@@ -714,6 +720,9 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
+
+      {/* ===== DEMO VIDEO LIBRARY ===== */}
+      <DemoLibrary />
 
       {/* ===== ROI CALCULATOR ===== */}
       <motion.section 
