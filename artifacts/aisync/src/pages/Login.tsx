@@ -47,7 +47,7 @@ export default function Login() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Client Login</h1>
-          <p className="text-sm text-muted-foreground mt-2">Access your Aisync dashboard</p>
+          <p className="text-sm text-muted-foreground mt-2">Access your aicronics dashboard</p>
         </div>
 
         {error && (

@@ -170,7 +170,7 @@ export default function ClientDashboard() {
               <TrendingUp className="w-3.5 h-3.5 text-white" />
             </div>
             <div>
-              <p className="font-bold text-sm tracking-tight leading-none">Aisync</p>
+              <p className="font-bold text-sm tracking-tight leading-none">aicronics</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Client Portal</p>
             </div>
           </div>

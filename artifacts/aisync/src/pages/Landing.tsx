@@ -196,7 +196,7 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 bg-[#F6F1E9]/85 backdrop-blur-md border-b border-[#E4D9C9] transition-all">
         <div className="max-w-[1180px] mx-auto px-6 md:px-14 h-[74px] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] font-normal tracking-tight leading-none">Aisync</span>
+            <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] font-normal tracking-tight leading-none">aicronics</span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#B8502E] translate-y-[-2px] inline-block"></span>
           </div>
           
@@ -329,7 +329,7 @@ export default function Landing() {
                         transition={{ duration: 0.35, ease: "easeOut" }}
                       >
                         <div className="text-[11px] tracking-[0.12em] uppercase font-bold mb-1.5" style={{ color: isAgent ? "#6B6155" : "#B8502E" }}>
-                          {isAgent ? "Aisync" : "Caller"}
+                          {isAgent ? "aicronics" : "Caller"}
                         </div>
                         <p style={{ fontFamily: "'Newsreader', serif" }} className="text-[17.5px] sm:text-[18px] leading-[1.45] m-0 text-[#2C261E]">
                           {line.text}
@@ -465,7 +465,7 @@ export default function Landing() {
                 A voice that <span className="italic text-[#B8502E]">feels</span> real.
               </h2>
               <p className="text-[17px] text-[#564C40] leading-[1.6] mb-8 max-w-[420px]">
-                Aisync combines neural speech synthesis with real-time intent understanding to deliver conversations that are indistinguishable from a trained human receptionist.
+                aicronics combines neural speech synthesis with real-time intent understanding to deliver conversations that are indistinguishable from a trained human receptionist.
               </p>
               <div className="flex flex-col gap-4">
                 {[
@@ -514,7 +514,7 @@ export default function Landing() {
               Like your best front-desk employee — who never takes a day off.
             </h2>
             <p className="text-[17px] text-[#564C40] leading-[1.55] m-0">
-              Aisync speaks naturally, understands what the caller actually wants, and takes the action a good employee would.
+              aicronics speaks naturally, understands what the caller actually wants, and takes the action a good employee would.
             </p>
           </motion.div>
 
@@ -565,7 +565,7 @@ export default function Landing() {
           whileInView="whileInView"
         >
           {[
-            { step: "1", title: "Connect your line", desc: "Forward your missed or busy calls to your Aisync number, and link your tools." },
+            { step: "1", title: "Connect your line", desc: "Forward your missed or busy calls to your aicronics number, and link your tools." },
             { step: "2", title: "Configure the agent", desc: "Set your scripts, FAQs, booking rules, and brand voice in the portal." },
             { step: "3", title: "It speaks naturally", desc: "The AI greets callers, understands intent, and handles the conversation warmly." },
             { step: "4", title: "Everything syncs", desc: "Bookings, notes, and summaries land in your calendar and inbox automatically." }
@@ -588,7 +588,7 @@ export default function Landing() {
             <motion.div className="relative order-2 lg:order-1" {...scaleIn}>
               <motion.img
                 src={`${baseUrl}/images/dashboard_preview.png`}
-                alt="Aisync Dashboard"
+                alt="aicronics Dashboard"
                 loading="lazy"
                 className="w-full rounded-2xl shadow-[0_40px_80px_-28px_rgba(33,28,22,0.4)] border border-[#E9DFCE] relative z-10"
                 whileHover={{ scale: 1.015, y: -4 }}
@@ -736,7 +736,7 @@ export default function Landing() {
             See the revenue you're letting ring out.
           </h2>
           <p className="text-[17px] text-[#564C40] leading-[1.55] m-0">
-            Missed calls are missed clients. Estimate what Aisync recaptures for you each month.
+            Missed calls are missed clients. Estimate what aicronics recaptures for you each month.
           </p>
         </div>
 
@@ -913,11 +913,11 @@ export default function Landing() {
           {[
             {
               q: "Does the AI really sound like a person?",
-              a: "Yes. Aisync uses neural text-to-speech with natural pacing, breathing, and warm inflection, plus ultra-low latency so there's no awkward delay. Most callers don't realize they're talking to AI."
+              a: "Yes. aicronics uses neural text-to-speech with natural pacing, breathing, and warm inflection, plus ultra-low latency so there's no awkward delay. Most callers don't realize they're talking to AI."
             },
             {
               q: "How does the booking integration work?",
-              a: "Aisync connects to Google Calendar, Outlook, Calendly, and industry tools like Jane, Mindbody, and Acuity. It reads live availability, books directly into your schedule, and sends an instant text confirmation."
+              a: "aicronics connects to Google Calendar, Outlook, Calendly, and industry tools like Jane, Mindbody, and Acuity. It reads live availability, books directly into your schedule, and sends an instant text confirmation."
             },
             {
               q: "Can I customize the script and personality?",
@@ -1124,10 +1124,10 @@ export default function Landing() {
       {/* ===== FOOTER ===== */}
       <footer className="max-w-[1180px] mx-auto px-6 md:px-14 py-12 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-baseline gap-2">
-          <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[24px]">Aisync</span>
+          <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[24px]">aicronics</span>
           <span className="w-1.5 h-1.5 rounded-full bg-[#B8502E] translate-y-[-2px] inline-block"></span>
         </div>
-        <p className="text-[13px] text-[#9A8F7E] m-0 text-center sm:text-left">© 2026 Aisync — never miss another call.</p>
+        <p className="text-[13px] text-[#9A8F7E] m-0 text-center sm:text-left">© 2026 aicronics — never miss another call.</p>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#6B6155] justify-center sm:justify-start">
           <span className="cursor-pointer hover:text-[#211C16] transition-colors">Privacy</span>
           <span className="cursor-pointer hover:text-[#211C16] transition-colors">Terms</span>
