@@ -18,7 +18,7 @@ import {
   LayoutDashboard, Users, FolderKanban, UserCog, Receipt,
   Lightbulb, BookOpen, LogOut, X, Phone, Mail, Building2,
   TrendingUp, CheckCircle2, Clock, AlertCircle, ChevronRight,
-  Plus, Star, Calendar, Briefcase,
+  Plus, Star, Calendar, Briefcase, Menu,
 } from "lucide-react";
 
 type Tab = "overview" | "clients" | "projects" | "employees" | "invoices" | "feature-requests" | "demo-leads";
@@ -75,6 +75,7 @@ function frLabel(s: string) {
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
+  const [navOpen, setNavOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const qc = useQueryClient();
 
@@ -243,11 +244,24 @@ export default function AdminDashboard() {
   const totalProjects = (projects ?? []).length;
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground relative">
+    <div className="min-h-screen md:flex bg-background text-foreground relative">
       <AmbientBackground />
 
+      {/* ── Mobile top bar ─────────────────────────────────────────────── */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 glass-sidebar border-b border-white/[0.06]">
+        <button onClick={() => setNavOpen(true)} aria-label="Open menu" className="p-2 -ml-2 rounded-lg text-foreground/90 active:bg-secondary/60">
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shrink-0">
+          <TrendingUp className="w-3 h-3 text-white" />
+        </div>
+        <p className="font-bold text-sm tracking-tight">aicronics</p>
+        <span className="ml-auto text-xs text-muted-foreground truncate">{navItems.find((n) => n.id === tab)?.label}</span>
+      </header>
+      {navOpen && <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]" onClick={() => setNavOpen(false)} />}
+
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="w-60 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col relative z-10">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] md:relative md:z-10 md:w-60 md:max-w-none md:translate-x-0 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col overflow-y-auto transition-transform duration-300 ease-out ${navOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-5 border-b border-border/50 flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow">
             <TrendingUp className="w-3.5 h-3.5 text-white" />
@@ -264,7 +278,7 @@ export default function AdminDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => setTab(item.id)}
+                onClick={() => { setTab(item.id); setNavOpen(false); }}
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 ${
                   tab === item.id
                     ? "bg-primary/15 text-primary font-semibold"
@@ -306,9 +320,9 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto relative z-10">
+      <main className="flex-1 min-w-0 overflow-x-hidden relative z-10">
         <motion.div key={tab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
 
           {/* ── OVERVIEW ─────────────────────────────────────────────────── */}
           {tab === "overview" && (
@@ -449,7 +463,7 @@ export default function AdminDashboard() {
               {showClientForm && (
                 <form onSubmit={handleAddClient} className="glass glass-hover rounded-2xl p-6 mb-6">
                   <h3 className="font-semibold mb-4 text-sm">New Client Account</h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input required value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                     <input required value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} placeholder="Email address" type="email" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                     <input required value={newClientBusiness} onChange={(e) => setNewClientBusiness(e.target.value)} placeholder="Business name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -497,7 +511,7 @@ export default function AdminDashboard() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <Phone className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">{c.phone}</span>
@@ -539,8 +553,8 @@ export default function AdminDashboard() {
               {showProjectForm && (
                 <form onSubmit={handleAddProject} className="glass glass-hover rounded-2xl p-6 mb-6">
                   <h3 className="font-semibold mb-4 text-sm">New Project</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
                       <select required value={newProjClientId} onChange={(e) => setNewProjClientId(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
                         <option value="">Select client…</option>
                         {clients?.map((c) => <option key={c.id} value={c.id}>{c.businessName} ({c.userEmail})</option>)}
@@ -550,7 +564,7 @@ export default function AdminDashboard() {
                     <select value={newProjStatus} onChange={(e) => setNewProjStatus(e.target.value)} className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
                       {Object.entries(PROJECT_STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                     </select>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <textarea required value={newProjDesc} onChange={(e) => setNewProjDesc(e.target.value)} placeholder="Project description" rows={2} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
                     </div>
                     <div>
@@ -595,7 +609,7 @@ export default function AdminDashboard() {
                           {p.latestUpdate && (
                             <p className="text-xs mb-3 p-2.5 rounded-lg bg-secondary/60"><span className="font-semibold text-foreground">Current message: </span>{p.latestUpdate}</p>
                           )}
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs text-muted-foreground block mb-1">Stage</label>
                               <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
@@ -606,7 +620,7 @@ export default function AdminDashboard() {
                               <label className="text-xs text-muted-foreground block mb-1">Expected completion</label>
                               <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                               <label className="text-xs text-muted-foreground block mb-1">New update for the client (leave empty to keep the current message)</label>
                               <textarea value={editUpdate} onChange={(e) => setEditUpdate(e.target.value)} rows={3} placeholder="e.g. Consultation done — we're now building your agent's script and booking rules." className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
                             </div>
@@ -676,11 +690,11 @@ export default function AdminDashboard() {
               </div>
 
               {showEmpForm && (
-                <form onSubmit={handleAddEmployee} className="glass glass-hover rounded-2xl p-6 mb-6 grid grid-cols-3 gap-3 items-end">
+                <form onSubmit={handleAddEmployee} className="glass glass-hover rounded-2xl p-6 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                   <input required value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                   <input required value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value)} placeholder="Role title" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                   <input required value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} placeholder="Email" type="email" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                  <button type="submit" disabled={addingEmp} className="col-span-3 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                  <button type="submit" disabled={addingEmp} className="sm:col-span-3 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
                     {addingEmp ? "Adding…" : "Add Team Member"}
                   </button>
                 </form>
@@ -723,7 +737,7 @@ export default function AdminDashboard() {
 
               {/* Summary bar */}
               {(invoices ?? []).length > 0 && (
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {[
                     { label: "Total Billed", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.totalAmount)), 0), color: "text-foreground" },
                     { label: "Collected", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0), color: "text-emerald-400" },
@@ -737,8 +751,8 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <div className="glass glass-hover rounded-2xl overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="glass glass-hover rounded-2xl overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
                   <thead>
                     <tr className="border-b border-border/50 bg-secondary/20">
                       <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Invoice</th>
@@ -859,7 +873,7 @@ export default function AdminDashboard() {
       {selectedClientId && selectedClient && (
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40" onClick={() => setSelectedClientId(null)} />
-          <motion.aside initial={{ x: 480, opacity: 0.6 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="fixed inset-y-0 right-0 w-[480px] glass-sidebar bg-[hsl(222_47%_6%/0.82)] border-l border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden">
+          <motion.aside initial={{ x: 480, opacity: 0.6 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="fixed inset-y-0 right-0 w-full sm:w-[480px] glass-sidebar bg-[hsl(222_47%_6%/0.82)] border-l border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden">
             {/* Panel header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0">
               <div className="flex items-center gap-3">

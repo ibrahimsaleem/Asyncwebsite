@@ -253,3 +253,8 @@
   .glass-hover, .lift, .btn-shine::after { transition: none !important; }
   html { scroll-behavior: auto; }
 }
+
+/* On phones the sidebar is an overlay drawer, so it must be solid */
+@media (max-width: 767px) {
+  .glass-sidebar { background: hsl(222 47% 5% / 0.97); }
+}

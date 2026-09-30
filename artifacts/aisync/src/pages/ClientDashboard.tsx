@@ -24,7 +24,7 @@ import {
   LayoutDashboard, FolderKanban, Receipt, FileText, Lightbulb,
   LogOut, TrendingUp, CheckCircle2, Clock, AlertCircle, Users,
   Calendar, Upload, Trash2, ExternalLink, Send, MessageSquare,
-  Building2, Phone, Mail,
+  Building2, Phone, Mail, Menu,
 } from "lucide-react";
 
 type Tab = "overview" | "project" | "invoices" | "files" | "requests";
@@ -78,6 +78,7 @@ function fileIcon(name: string) {
 export default function ClientDashboard() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
+  const [navOpen, setNavOpen] = useState(false);
   const [requestTitle, setRequestTitle] = useState("");
   const [requestDesc, setRequestDesc] = useState("");
   const [requestPriority, setRequestPriority] = useState<"low" | "medium" | "high">("medium");
@@ -163,11 +164,24 @@ export default function ClientDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground relative">
+    <div className="min-h-screen md:flex bg-background text-foreground relative">
       <AmbientBackground />
 
+      {/* ── Mobile top bar ─────────────────────────────────────────────── */}
+      <header className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 glass-sidebar border-b border-white/[0.06]">
+        <button onClick={() => setNavOpen(true)} aria-label="Open menu" className="p-2 -ml-2 rounded-lg text-foreground/90 active:bg-secondary/60">
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shrink-0">
+          <TrendingUp className="w-3 h-3 text-white" />
+        </div>
+        <p className="font-bold text-sm tracking-tight">aicronics</p>
+        <span className="ml-auto text-xs text-muted-foreground truncate">{navItems.find((n) => n.id === tab)?.label}</span>
+      </header>
+      {navOpen && <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]" onClick={() => setNavOpen(false)} />}
+
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="w-60 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col relative z-10">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] md:relative md:z-10 md:w-60 md:max-w-none md:translate-x-0 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col overflow-y-auto transition-transform duration-300 ease-out ${navOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-5 border-b border-border/50">
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow">
@@ -192,7 +206,7 @@ export default function ClientDashboard() {
             return (
               <button
                 key={item.id}
-                onClick={() => setTab(item.id)}
+                onClick={() => { setTab(item.id); setNavOpen(false); }}
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 ${
                   tab === item.id
                     ? "bg-primary/15 text-primary font-semibold"
@@ -227,9 +241,9 @@ export default function ClientDashboard() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto relative z-10">
+      <main className="flex-1 min-w-0 overflow-x-hidden relative z-10">
         <motion.div key={tab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="p-8 max-w-5xl mx-auto">
+        <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
 
           {/* ── OVERVIEW ─────────────────────────────────────────────────── */}
           {tab === "overview" && (
@@ -288,8 +302,8 @@ export default function ClientDashboard() {
 
               {/* Progress timeline */}
               {project && (
-                <div className="glass glass-hover rounded-2xl p-6 mb-6">
-                  <div className="flex items-center justify-between mb-6">
+                <div className="glass glass-hover rounded-2xl p-4 sm:p-6 mb-6">
+                  <div className="flex flex-wrap items-center justify-between gap-1 mb-6">
                     <h3 className="font-semibold">Project Progress</h3>
                     <span className="text-xs text-muted-foreground">{project.projectName}</span>
                   </div>
@@ -307,7 +321,7 @@ export default function ClientDashboard() {
                             i === si ? "bg-primary border-primary shadow-[0_0_12px_rgba(99,102,241,0.6)] scale-110" :
                             "bg-card border-border/80"
                           }`} />
-                          <span className={`text-xs text-center max-w-[60px] leading-tight ${i <= si ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                          <span className={`text-[10px] sm:text-xs text-center max-w-[52px] sm:max-w-[60px] leading-tight ${i <= si ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                             {stage.label}
                           </span>
                         </div>
@@ -363,7 +377,7 @@ export default function ClientDashboard() {
                         { onboarding: "bg-slate-500/15 text-slate-400", build_phase: "bg-blue-500/15 text-blue-400", demo_phase: "bg-purple-500/15 text-purple-400", testing: "bg-orange-500/15 text-orange-400", completed: "bg-emerald-500/15 text-emerald-400" }[project.status] ?? "bg-secondary text-muted-foreground"
                       }`}>{STAGES[si]?.label}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t border-border/40">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-4 border-t border-border/40">
                       <div>
                         <p className="text-muted-foreground text-xs mb-1">Start Date</p>
                         <p className="font-medium flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-muted-foreground" />{project.startDate ? new Date(project.startDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}</p>
@@ -472,7 +486,7 @@ export default function ClientDashboard() {
 
               {/* Summary totals */}
               {(invoices ?? []).length > 0 && (
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {[
                     { label: "Total Billed", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.totalAmount)), 0), color: "text-foreground" },
                     { label: "Paid",         value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0),  color: "text-emerald-400" },
@@ -506,7 +520,7 @@ export default function ClientDashboard() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 mb-5 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5 text-sm">
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Total</p>
                             <p className="text-xl font-bold">${total.toLocaleString()}</p>
@@ -628,7 +642,7 @@ export default function ClientDashboard() {
                     rows={3}
                     className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">Priority:</span>
                       {(["low", "medium", "high"] as const).map((p) => (
