@@ -22,7 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useLogin({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        // Store the user right away so protected routes see the session
+        // before the /me refetch finishes (otherwise they bounce back to /login).
+        queryClient.setQueryData(getGetMeQueryKey(), data.user);
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       },
     },

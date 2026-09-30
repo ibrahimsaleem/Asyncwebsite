@@ -93,6 +93,15 @@ router.get("/projects/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  // Non-admins may only view their own records
+  if (req.session.userRole !== "admin") {
+    const [me] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
+    if (!me || me.id !== project.clientId) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+  }
+
   const detailed = await buildProjectWithDetails(project);
   res.json(GetProjectResponse.parse(detailed));
 });

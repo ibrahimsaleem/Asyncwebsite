@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
@@ -8,20 +8,21 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Navigate once the auth context knows the user, so protected routes
+  // don't see a stale "logged out" state and bounce back here.
+  useEffect(() => {
+    if (user) setLocation(user.role === "admin" ? "/admin" : "/client");
+  }, [user, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const res = await login({ data: { email, password } });
-      if (res.user.role === "admin") {
-        setLocation("/admin");
-      } else {
-        setLocation("/client");
-      }
+      await login({ data: { email, password } });
     } catch (err: any) {
       console.error(err);
       setError("Invalid credentials. Please try again.");
@@ -88,16 +89,9 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-border/50 text-xs text-muted-foreground text-center space-y-2">
-          <p className="font-mono bg-secondary/80 text-foreground px-2 py-1 rounded inline-block font-bold">Demo Login Credentials</p>
-          <div className="space-y-1 text-left max-w-xs mx-auto font-mono text-[11px] bg-black/20 p-3 rounded-lg border border-border/30">
-            <p className="text-primary font-bold">Admin Accounts:</p>
-            <p>• admin@aisync.ai / admin123</p>
-            <p>• admin2@aisync.ai / admin123</p>
-            <p className="text-primary font-bold mt-2">Client Account:</p>
-            <p>• client@demo.com / client123</p>
-          </div>
-        </div>
+        <p className="mt-8 pt-6 border-t border-border/50 text-xs text-muted-foreground text-center">
+          Don't have an account? Your login is created when your project starts.
+        </p>
       </motion.div>
     </div>
   );

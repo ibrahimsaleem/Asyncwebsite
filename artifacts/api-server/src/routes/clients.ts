@@ -50,6 +50,12 @@ router.post("/clients", requireAdmin, async (req, res): Promise<void> => {
 
   const { name, email, password, businessName, industry, phone, notes } = parsed.data;
 
+  const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  if (existing) {
+    res.status(409).json({ error: "A user with this email already exists" });
+    return;
+  }
+
   // Create user account
   const passwordHash = await bcrypt.hash(password ?? "changeme123", 10);
   const [user] = await db
@@ -96,6 +102,15 @@ router.get("/clients/:id", requireAuth, async (req, res): Promise<void> => {
   if (!client) {
     res.status(404).json({ error: "Client not found" });
     return;
+  }
+
+  // Non-admins may only view their own records
+  if (req.session.userRole !== "admin") {
+    const [me] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
+    if (!me || me.id !== client.id) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
   }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, client.userId));

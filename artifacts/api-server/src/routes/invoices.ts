@@ -81,6 +81,15 @@ router.get("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  // Non-admins may only view their own records
+  if (req.session.userRole !== "admin") {
+    const [me] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
+    if (!me || me.id !== inv.clientId) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+  }
+
   res.json(GetInvoiceResponse.parse(await formatInvoice(inv)));
 });
 
