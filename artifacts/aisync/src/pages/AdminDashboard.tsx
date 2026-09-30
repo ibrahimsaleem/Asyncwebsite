@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import AmbientBackground from "@/components/AmbientBackground";
+import { motion } from "framer-motion";
+
 import {
   useGetAdminSummary, useListClients, useListProjects, useListEmployees,
   useListInvoices, useListFeatureRequests, useListDemoRequests,
   useCreateClient, useCreateProject, useCreateEmployee,
-  useUpdateFeatureRequest, useDeleteEmployee,
-  ProjectInputStatus,
+  useUpdateFeatureRequest, useDeleteEmployee, useUpdateProject,
+  ProjectInputStatus, ProjectUpdateStatus,
   getGetAdminSummaryQueryKey, getListClientsQueryKey, getListProjectsQueryKey,
   getListEmployeesQueryKey, getListInvoicesQueryKey, getListFeatureRequestsQueryKey,
   getListDemoRequestsQueryKey, FeatureRequestUpdateStatus, FeatureRequestStatus,
@@ -112,6 +115,14 @@ export default function AdminDashboard() {
   const createEmployee = useCreateEmployee();
   const updateFeatureRequest = useUpdateFeatureRequest();
   const deleteEmployee = useDeleteEmployee();
+  const updateProject = useUpdateProject();
+
+  // Inline "post an update to the client" editor on the Projects tab
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
+  const [editStatus, setEditStatus] = useState<string>("onboarding");
+  const [editUpdate, setEditUpdate] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [savingProject, setSavingProject] = useState(false);
 
   // Selected client panel data
   const selectedClient = clients?.find((c) => c.id === selectedClientId);
@@ -142,6 +153,33 @@ export default function AdminDashboard() {
       qc.invalidateQueries({ queryKey: getListProjectsQueryKey() });
       qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
     } finally { setAddingProject(false); }
+  }
+
+  function startEditProject(p: { id: number; status: string; latestUpdate?: string | null; expectedCompletionDate?: string | null }) {
+    setEditingProjectId(p.id);
+    setEditStatus(p.status);
+    setEditUpdate("");
+    setEditEnd(p.expectedCompletionDate ?? "");
+  }
+
+  async function handleSaveProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (editingProjectId === null) return;
+    setSavingProject(true);
+    try {
+      await updateProject.mutateAsync({
+        id: editingProjectId,
+        data: {
+          status: editStatus as ProjectUpdateStatus,
+          // Leaving the box empty keeps the current message
+          ...(editUpdate.trim() ? { latestUpdate: editUpdate.trim() } : {}),
+          expectedCompletionDate: editEnd || null,
+        },
+      });
+      setEditingProjectId(null);
+      qc.invalidateQueries({ queryKey: getListProjectsQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+    } finally { setSavingProject(false); }
   }
 
   async function handleAddEmployee(e: React.FormEvent) {
@@ -205,10 +243,11 @@ export default function AdminDashboard() {
   const totalProjects = (projects ?? []).length;
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="min-h-screen flex bg-background text-foreground relative">
+      <AmbientBackground />
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="w-60 shrink-0 border-r border-border/50 bg-card/40 flex flex-col">
+      <aside className="w-60 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col relative z-10">
         <div className="p-5 border-b border-border/50 flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow">
             <TrendingUp className="w-3.5 h-3.5 text-white" />
@@ -267,7 +306,8 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto relative z-10">
+        <motion.div key={tab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
         <div className="p-8 max-w-7xl mx-auto">
 
           {/* ── OVERVIEW ─────────────────────────────────────────────────── */}
@@ -290,7 +330,7 @@ export default function AdminDashboard() {
                 ].map((m) => {
                   const Icon = m.icon;
                   return (
-                    <div key={m.label} className="bg-card border border-border/60 rounded-2xl p-5 hover:border-border transition-colors">
+                    <div key={m.label} className="glass glass-hover rounded-2xl p-5 hover:border-border transition-colors">
                       <div className="flex items-start justify-between mb-4">
                         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{m.label}</p>
                         <div className={`w-8 h-8 rounded-lg ${m.accent} flex items-center justify-center`}>
@@ -305,7 +345,7 @@ export default function AdminDashboard() {
 
               {/* Project pipeline */}
               {totalProjects > 0 && (
-                <div className="bg-card border border-border/60 rounded-2xl p-6 mb-6">
+                <div className="glass glass-hover rounded-2xl p-6 mb-6">
                   <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <FolderKanban className="w-4 h-4 text-muted-foreground" />
                     Project Pipeline
@@ -336,7 +376,7 @@ export default function AdminDashboard() {
 
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* Recent demo leads */}
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
+                <div className="glass glass-hover rounded-2xl overflow-hidden">
                   <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
                     <h3 className="font-semibold flex items-center gap-2 text-sm">
                       <BookOpen className="w-4 h-4 text-muted-foreground" />
@@ -365,7 +405,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Pending feature requests */}
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
+                <div className="glass glass-hover rounded-2xl overflow-hidden">
                   <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
                     <h3 className="font-semibold flex items-center gap-2 text-sm">
                       <Lightbulb className="w-4 h-4 text-muted-foreground" />
@@ -407,7 +447,7 @@ export default function AdminDashboard() {
               </div>
 
               {showClientForm && (
-                <form onSubmit={handleAddClient} className="bg-card border border-border/60 rounded-2xl p-6 mb-6">
+                <form onSubmit={handleAddClient} className="glass glass-hover rounded-2xl p-6 mb-6">
                   <h3 className="font-semibold mb-4 text-sm">New Client Account</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <input required value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -432,7 +472,7 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={c.id}
-                      className="bg-card border border-border/60 rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
+                      className="glass glass-hover rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
                       onClick={() => setSelectedClientId(c.id)}
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -478,7 +518,7 @@ export default function AdminDashboard() {
                   );
                 })}
               </div>
-              {(clients ?? []).length === 0 && <div className="bg-card border border-border rounded-2xl p-16 text-center text-muted-foreground">No clients yet. Add your first one above.</div>}
+              {(clients ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No clients yet. Add your first one above.</div>}
             </div>
           )}
 
@@ -497,7 +537,7 @@ export default function AdminDashboard() {
               </div>
 
               {showProjectForm && (
-                <form onSubmit={handleAddProject} className="bg-card border border-border/60 rounded-2xl p-6 mb-6">
+                <form onSubmit={handleAddProject} className="glass glass-hover rounded-2xl p-6 mb-6">
                   <h3 className="font-semibold mb-4 text-sm">New Project</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
@@ -534,7 +574,7 @@ export default function AdminDashboard() {
                   const client = clients?.find((c) => c.id === p.clientId);
                   const is = client ? industryStyle(client.industry) : { bg: "bg-secondary", text: "text-muted-foreground", dot: "bg-muted" };
                   return (
-                    <div key={p.id} className="bg-card border border-border/60 rounded-2xl p-5">
+                    <div key={p.id} className="glass glass-hover rounded-2xl p-5">
                       <div className="flex items-start justify-between gap-4 mb-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -543,7 +583,42 @@ export default function AdminDashboard() {
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
                         </div>
+                        {editingProjectId !== p.id && (
+                          <button onClick={() => startEditProject(p)} className="shrink-0 px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-semibold hover:bg-primary/25 transition-colors">
+                            Update
+                          </button>
+                        )}
                       </div>
+                      {editingProjectId === p.id && (
+                        <form onSubmit={handleSaveProject} className="mb-4 p-4 bg-background/60 border border-border rounded-xl">
+                          <p className="text-xs text-muted-foreground mb-3">The client sees the stage and this message on their dashboard as "Latest update from your team".</p>
+                          {p.latestUpdate && (
+                            <p className="text-xs mb-3 p-2.5 rounded-lg bg-secondary/60"><span className="font-semibold text-foreground">Current message: </span>{p.latestUpdate}</p>
+                          )}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs text-muted-foreground block mb-1">Stage</label>
+                              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                {Object.entries(PROJECT_STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground block mb-1">Expected completion</label>
+                              <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                            </div>
+                            <div className="col-span-2">
+                              <label className="text-xs text-muted-foreground block mb-1">New update for the client (leave empty to keep the current message)</label>
+                              <textarea value={editUpdate} onChange={(e) => setEditUpdate(e.target.value)} rows={3} placeholder="e.g. Consultation done — we're now building your agent's script and booking rules." className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button type="submit" disabled={savingProject} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                              {savingProject ? "Saving…" : "Save update"}
+                            </button>
+                            <button type="button" onClick={() => setEditingProjectId(null)} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-secondary transition-colors">Cancel</button>
+                          </div>
+                        </form>
+                      )}
                       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                         {p.clientBusinessName && (
                           <span className="flex items-center gap-1.5">
@@ -581,7 +656,7 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
-                {(projects ?? []).length === 0 && <div className="bg-card border border-border rounded-2xl p-16 text-center text-muted-foreground">No projects yet.</div>}
+                {(projects ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No projects yet.</div>}
               </div>
             </div>
           )}
@@ -601,7 +676,7 @@ export default function AdminDashboard() {
               </div>
 
               {showEmpForm && (
-                <form onSubmit={handleAddEmployee} className="bg-card border border-border/60 rounded-2xl p-6 mb-6 grid grid-cols-3 gap-3 items-end">
+                <form onSubmit={handleAddEmployee} className="glass glass-hover rounded-2xl p-6 mb-6 grid grid-cols-3 gap-3 items-end">
                   <input required value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                   <input required value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value)} placeholder="Role title" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                   <input required value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} placeholder="Email" type="email" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -615,7 +690,7 @@ export default function AdminDashboard() {
                 {(employees ?? []).map((emp) => {
                   const projectCount = (projects ?? []).filter((p) => p.employees?.some((e) => e.id === emp.id)).length;
                   return (
-                    <div key={emp.id} className="bg-card border border-border/60 rounded-2xl p-5 flex items-start gap-4">
+                    <div key={emp.id} className="glass glass-hover rounded-2xl p-5 flex items-start gap-4">
                       <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                         {initials(emp.name)}
                       </div>
@@ -634,7 +709,7 @@ export default function AdminDashboard() {
                   );
                 })}
               </div>
-              {(employees ?? []).length === 0 && <div className="bg-card border border-border rounded-2xl p-16 text-center text-muted-foreground">No team members yet.</div>}
+              {(employees ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No team members yet.</div>}
             </div>
           )}
 
@@ -654,7 +729,7 @@ export default function AdminDashboard() {
                     { label: "Collected", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0), color: "text-emerald-400" },
                     { label: "Outstanding", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0), color: "text-destructive" },
                   ].map((s) => (
-                    <div key={s.label} className="bg-card border border-border/60 rounded-xl p-4">
+                    <div key={s.label} className="glass glass-hover rounded-xl p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{s.label}</p>
                       <p className={`text-2xl font-bold ${s.color}`}>${s.value.toLocaleString()}</p>
                     </div>
@@ -662,7 +737,7 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
+              <div className="glass glass-hover rounded-2xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/50 bg-secondary/20">
@@ -705,7 +780,7 @@ export default function AdminDashboard() {
               </div>
               <div className="space-y-3">
                 {(featureRequests ?? []).map((req) => (
-                  <div key={req.id} className="bg-card border border-border/60 rounded-2xl p-5">
+                  <div key={req.id} className="glass glass-hover rounded-2xl p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -725,7 +800,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
-                {(featureRequests ?? []).length === 0 && <div className="bg-card border border-border rounded-2xl p-16 text-center text-muted-foreground">No feature requests yet.</div>}
+                {(featureRequests ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No feature requests yet.</div>}
               </div>
             </div>
           )}
@@ -741,7 +816,7 @@ export default function AdminDashboard() {
                 {(demoRequests ?? []).map((d) => {
                   const is = industryStyle(d.industry);
                   return (
-                    <div key={d.id} className="bg-card border border-border/60 rounded-2xl p-5">
+                    <div key={d.id} className="glass glass-hover rounded-2xl p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-4 flex-1 min-w-0">
                           <div className={`w-10 h-10 rounded-xl ${is.bg} flex items-center justify-center text-xs font-bold ${is.text} shrink-0`}>
@@ -771,21 +846,22 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
-                {(demoRequests ?? []).length === 0 && <div className="bg-card border border-border rounded-2xl p-16 text-center text-muted-foreground">No demo requests yet.</div>}
+                {(demoRequests ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No demo requests yet.</div>}
               </div>
             </div>
           )}
 
         </div>
+      </motion.div>
       </main>
 
       {/* ── Client Detail Panel ──────────────────────────────────────────── */}
       {selectedClientId && selectedClient && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setSelectedClientId(null)} />
-          <aside className="fixed inset-y-0 right-0 w-[480px] bg-card border-l border-border shadow-2xl z-50 flex flex-col overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40" onClick={() => setSelectedClientId(null)} />
+          <motion.aside initial={{ x: 480, opacity: 0.6 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="fixed inset-y-0 right-0 w-[480px] glass-sidebar bg-[hsl(222_47%_6%/0.82)] border-l border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden">
             {/* Panel header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 bg-card shrink-0">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${industryStyle(selectedClient.industry).bg} ${industryStyle(selectedClient.industry).text}`}>
                   {initials(selectedClient.userName ?? selectedClient.businessName)}
@@ -925,7 +1001,7 @@ export default function AdminDashboard() {
                 <Mail className="w-4 h-4" /> Email {selectedClient.userName?.split(" ")[0]}
               </a>
             </div>
-          </aside>
+          </motion.aside>
         </>
       )}
     </div>

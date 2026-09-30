@@ -36,6 +36,42 @@ export const LoginResponse = zod.object({
 
 
 /**
+ * @summary Self-service client signup (creates account, client profile, onboarding project and initial request)
+ */
+export const registerBodyNameMin = 2;
+
+export const registerBodyPasswordMin = 8;
+
+export const registerBodyBusinessNameMin = 2;
+
+export const registerBodyPhoneMin = 5;
+
+export const registerBodyRequirementsMin = 10;
+
+
+
+export const RegisterBody = zod.object({
+  "name": zod.string().min(registerBodyNameMin),
+  "email": zod.string().email(),
+  "password": zod.string().min(registerBodyPasswordMin),
+  "businessName": zod.string().min(registerBodyBusinessNameMin),
+  "industry": zod.string(),
+  "phone": zod.string().min(registerBodyPhoneMin),
+  "requirements": zod.string().min(registerBodyRequirementsMin).describe('What the client wants the voice agent to do')
+})
+
+export const RegisterResponse = zod.object({
+  "user": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.enum(['admin', 'client']),
+  "createdAt": zod.string()
+})
+})
+
+
+/**
  * @summary Logout current user
  */
 export const LogoutResponse = zod.unknown()

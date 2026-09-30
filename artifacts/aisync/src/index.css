@@ -152,3 +152,104 @@
   animation: blip 1.6s infinite;
 }
 
+
+/* ===== Glass, ambient light and motion utilities ===== */
+
+/* Frosted glass panel for the dark portal (login, signup, dashboards) */
+.glass {
+  background: linear-gradient(145deg, hsl(222 47% 9% / 0.62), hsl(222 47% 5% / 0.48));
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid hsl(210 40% 98% / 0.08);
+  box-shadow: inset 0 1px 0 hsl(210 40% 98% / 0.06), 0 12px 40px hsl(224 60% 2% / 0.45);
+}
+.glass-hover {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.glass-hover:hover {
+  transform: translateY(-2px);
+  border-color: hsl(224 82% 56% / 0.35);
+  box-shadow: inset 0 1px 0 hsl(210 40% 98% / 0.08), 0 18px 50px hsl(224 60% 2% / 0.55), 0 0 0 1px hsl(224 82% 56% / 0.12), 0 0 40px hsl(224 82% 56% / 0.12);
+}
+.glass-sidebar {
+  background: linear-gradient(180deg, hsl(222 47% 7% / 0.7), hsl(222 47% 4% / 0.55));
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+/* Frosted glass for the warm light marketing pages */
+.glass-warm {
+  background: linear-gradient(145deg, rgb(255 253 249 / 0.72), rgb(246 241 233 / 0.5));
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgb(228 217 201 / 0.9);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 18px 50px rgb(33 28 22 / 0.08);
+}
+
+/* Gentle lift on hover for cards */
+.lift {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 50px rgb(33 28 22 / 0.12);
+}
+
+/* Light sweep across buttons on hover */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%) skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+.btn-shine:hover::after {
+  transform: translateX(120%) skewX(-20deg);
+}
+
+/* Slowly drifting ambient light behind the portal */
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(8vw, 6vh, 0) scale(1.12); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-7vw, -5vh, 0) scale(0.92); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); }
+  50% { transform: translate3d(4vw, -8vh, 0) scale(1.1); }
+}
+.ambient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+  will-change: transform;
+}
+.ambient-orb.a { animation: drift-a 22s ease-in-out infinite; }
+.ambient-orb.b { animation: drift-b 28s ease-in-out infinite; }
+.ambient-orb.c { animation: drift-c 34s ease-in-out infinite; }
+
+/* Subtle grid texture */
+.ambient-grid {
+  background-image:
+    linear-gradient(hsl(210 40% 98% / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(210 40% 98% / 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb, .animate-wv, .animate-blip { animation: none !important; }
+  .glass-hover, .lift, .btn-shine::after { transition: none !important; }
+  html { scroll-behavior: auto; }
+}

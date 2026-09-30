@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
 import ClientDashboard from "@/pages/ClientDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import { ThemeProvider } from "next-themes";
@@ -32,6 +33,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
+      <Route path="/signup" component={Signup} />
       <Route path="/client" component={() => <ProtectedRoute role="client" component={ClientDashboard} />} />
       <Route path="/admin" component={() => <ProtectedRoute role="admin" component={AdminDashboard} />} />
       <Route path="/buildworkflow" component={BuildWorkflowGuide} />

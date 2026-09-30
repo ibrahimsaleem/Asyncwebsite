@@ -14,6 +14,24 @@ export interface LoginInput {
   password: string;
 }
 
+export interface RegisterInput {
+  /** @minLength 2 */
+  name: string;
+  email: string;
+  /** @minLength 8 */
+  password: string;
+  /** @minLength 2 */
+  businessName: string;
+  industry: string;
+  /** @minLength 5 */
+  phone: string;
+  /**
+     * What the client wants the voice agent to do
+     * @minLength 10
+     */
+  requirements: string;
+}
+
 export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 

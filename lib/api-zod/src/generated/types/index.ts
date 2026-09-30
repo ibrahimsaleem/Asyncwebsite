@@ -40,6 +40,7 @@ export * from './projectUpdate';
 export * from './projectUpdateStatus';
 export * from './projectWithDetails';
 export * from './projectWithDetailsStatus';
+export * from './registerInput';
 export * from './uploadedFile';
 export * from './user';
 export * from './userRole';

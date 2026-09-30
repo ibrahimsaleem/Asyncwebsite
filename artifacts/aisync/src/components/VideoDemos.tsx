@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import { Play, ArrowRight } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DEMO_CATEGORIES, DEMO_VIDEOS, type DemoVideo } from "@/data/demos";
@@ -53,12 +54,12 @@ export function MainDemoVideo() {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 mt-8">
-        <a href="#demos" className="bg-[#211C16] text-[#F6F1E9] px-[26px] py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 inline-flex items-center gap-2">
+        <a href="#demos" className="btn-shine bg-[#211C16] text-[#F6F1E9] px-[26px] py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 inline-flex items-center gap-2">
           Watch a demo for your industry <ArrowRight className="w-4 h-4" />
         </a>
-        <a href="#demo" className="text-[15px] font-semibold border-b border-[#211C16] pb-0.5 hover:text-[#B8502E] hover:border-[#B8502E] transition-colors">
-          Book a free consultation
-        </a>
+        <Link href="/signup" className="text-[15px] font-semibold border-b border-[#211C16] pb-0.5 hover:text-[#B8502E] hover:border-[#B8502E] transition-colors">
+          Sign up &amp; request your agent
+        </Link>
       </div>
     </motion.section>
   );
@@ -200,13 +201,12 @@ export function DemoLibrary() {
                   >
                     WhatsApp us
                   </a>
-                  <a
-                    href="#demo"
-                    onClick={() => setActive(null)}
+                  <Link
+                    href="/signup"
                     className="bg-[#B8502E] text-[#FFFDF9] px-4 py-2.5 rounded-full font-semibold text-[13px] hover:bg-[#8f391e] transition-colors"
                   >
                     Get this agent for my business
-                  </a>
+                  </Link>
                 </div>
               </div>
             </>

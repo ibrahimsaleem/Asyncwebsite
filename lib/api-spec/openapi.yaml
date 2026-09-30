@@ -65,6 +65,29 @@ paths:
         "401":
           description: Invalid credentials
 
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Self-service client signup (creates account, client profile, onboarding project and initial request)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Account created and logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid input
+        "409":
+          description: Email already registered
+
   /auth/logout:
     post:
       operationId: logout
@@ -620,6 +643,32 @@ components:
           type: string
         password:
           type: string
+
+    RegisterInput:
+      type: object
+      required: [name, email, password, businessName, industry, phone, requirements]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        businessName:
+          type: string
+          minLength: 2
+        industry:
+          type: string
+        phone:
+          type: string
+          minLength: 5
+        requirements:
+          type: string
+          minLength: 10
+          description: What the client wants the voice agent to do
 
     AuthResponse:
       type: object

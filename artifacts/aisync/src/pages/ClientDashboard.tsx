@@ -1,5 +1,8 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import AmbientBackground from "@/components/AmbientBackground";
+import { motion } from "framer-motion";
+
 import {
   useGetMyClient,
   useListProjects,
@@ -160,10 +163,11 @@ export default function ClientDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="min-h-screen flex bg-background text-foreground relative">
+      <AmbientBackground />
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="w-60 shrink-0 border-r border-border/50 bg-card/40 flex flex-col">
+      <aside className="w-60 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col relative z-10">
         <div className="p-5 border-b border-border/50">
           <div className="flex items-center gap-2.5 mb-3">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow">
@@ -223,7 +227,8 @@ export default function ClientDashboard() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto relative z-10">
+        <motion.div key={tab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
         <div className="p-8 max-w-5xl mx-auto">
 
           {/* ── OVERVIEW ─────────────────────────────────────────────────── */}
@@ -268,7 +273,7 @@ export default function ClientDashboard() {
                 ].map((m) => {
                   const Icon = m.icon;
                   return (
-                    <div key={m.label} className="bg-card border border-border/60 rounded-2xl p-5">
+                    <div key={m.label} className="glass glass-hover rounded-2xl p-5">
                       <div className="flex items-start justify-between mb-4">
                         <p className="text-xs text-muted-foreground uppercase tracking-wider">{m.label}</p>
                         <div className={`w-8 h-8 rounded-lg ${m.accent} flex items-center justify-center`}>
@@ -283,7 +288,7 @@ export default function ClientDashboard() {
 
               {/* Progress timeline */}
               {project && (
-                <div className="bg-card border border-border/60 rounded-2xl p-6 mb-6">
+                <div className="glass glass-hover rounded-2xl p-6 mb-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="font-semibold">Project Progress</h3>
                     <span className="text-xs text-muted-foreground">{project.projectName}</span>
@@ -314,7 +319,7 @@ export default function ClientDashboard() {
 
               {/* Latest update card */}
               {project?.latestUpdate && (
-                <div className="bg-card border border-border/60 rounded-2xl p-6">
+                <div className="glass glass-hover rounded-2xl p-6">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Latest Update from Your Team</p>
@@ -328,7 +333,7 @@ export default function ClientDashboard() {
               )}
 
               {!project && !projectsLoading && (
-                <div className="bg-card border border-border/60 rounded-2xl p-12 text-center">
+                <div className="glass glass-hover rounded-2xl p-12 text-center">
                   <FolderKanban className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
                   <p className="text-muted-foreground">Your project hasn't been set up yet.</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">Your team will have it ready shortly.</p>
@@ -348,7 +353,7 @@ export default function ClientDashboard() {
               {project ? (
                 <div className="space-y-5">
                   {/* Project card */}
-                  <div className="bg-card border border-border/60 rounded-2xl p-6">
+                  <div className="glass glass-hover rounded-2xl p-6">
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div>
                         <h2 className="text-xl font-bold">{project.projectName}</h2>
@@ -377,7 +382,7 @@ export default function ClientDashboard() {
                   </div>
 
                   {/* Stage milestone timeline */}
-                  <div className="bg-card border border-border/60 rounded-2xl p-6">
+                  <div className="glass glass-hover rounded-2xl p-6">
                     <h3 className="font-semibold mb-6">Build Milestones</h3>
                     <div className="space-y-0">
                       {STAGES.map((stage, i) => {
@@ -425,7 +430,7 @@ export default function ClientDashboard() {
 
                   {/* Team */}
                   {project.employees && project.employees.length > 0 && (
-                    <div className="bg-card border border-border/60 rounded-2xl p-6">
+                    <div className="glass glass-hover rounded-2xl p-6">
                       <h3 className="font-semibold mb-4">Your Dedicated Team</h3>
                       <div className="grid sm:grid-cols-2 gap-3">
                         {project.employees.map((emp) => (
@@ -449,7 +454,7 @@ export default function ClientDashboard() {
                   )}
                 </div>
               ) : (
-                <div className="bg-card border border-border/60 rounded-2xl p-16 text-center">
+                <div className="glass glass-hover rounded-2xl p-16 text-center">
                   <FolderKanban className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
                   <p className="text-muted-foreground">No project assigned yet.</p>
                 </div>
@@ -473,7 +478,7 @@ export default function ClientDashboard() {
                     { label: "Paid",         value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0),  color: "text-emerald-400" },
                     { label: "Outstanding",  value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0),   color: totalDue > 0 ? "text-destructive" : "text-emerald-400" },
                   ].map((s) => (
-                    <div key={s.label} className="bg-card border border-border/60 rounded-xl p-4">
+                    <div key={s.label} className="glass glass-hover rounded-xl p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{s.label}</p>
                       <p className={`text-2xl font-bold ${s.color}`}>${s.value.toLocaleString()}</p>
                     </div>
@@ -489,7 +494,7 @@ export default function ClientDashboard() {
                     const due = parseFloat(String(inv.dueAmount));
                     const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
                     return (
-                      <div key={inv.id} className="bg-card border border-border/60 rounded-2xl p-6">
+                      <div key={inv.id} className="glass glass-hover rounded-2xl p-6">
                         <div className="flex items-start justify-between gap-4 mb-5">
                           <div>
                             <p className="font-bold text-sm">Invoice #{inv.id}</p>
@@ -530,7 +535,7 @@ export default function ClientDashboard() {
                   })}
                 </div>
               ) : (
-                <div className="bg-card border border-border/60 rounded-2xl p-16 text-center">
+                <div className="glass glass-hover rounded-2xl p-16 text-center">
                   <Receipt className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
                   <p className="text-muted-foreground">No invoices yet.</p>
                 </div>
@@ -566,7 +571,7 @@ export default function ClientDashboard() {
               {files && files.length > 0 ? (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {files.map((f) => (
-                    <div key={f.id} className="bg-card border border-border/60 rounded-xl p-4 flex items-start gap-3 group hover:border-primary/30 transition-colors">
+                    <div key={f.id} className="glass glass-hover rounded-xl p-4 flex items-start gap-3 group hover:border-primary/30 transition-colors">
                       <div className="text-2xl shrink-0 mt-0.5">{fileIcon(f.fileName)}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{f.fileName}</p>
@@ -584,7 +589,7 @@ export default function ClientDashboard() {
                   ))}
                 </div>
               ) : !filesLoading && (
-                <div className="bg-card border border-border/60 rounded-2xl p-16 text-center">
+                <div className="glass glass-hover rounded-2xl p-16 text-center">
                   <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
                   <p className="text-muted-foreground">No files yet.</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">Upload documents, screenshots, or assets above.</p>
@@ -602,7 +607,7 @@ export default function ClientDashboard() {
               </div>
 
               {/* Submission form */}
-              <form onSubmit={handleSubmitRequest} className="bg-card border border-border/60 rounded-2xl p-6 mb-6">
+              <form onSubmit={handleSubmitRequest} className="glass glass-hover rounded-2xl p-6 mb-6">
                 <h3 className="font-semibold mb-4 flex items-center gap-2 text-sm">
                   <Lightbulb className="w-4 h-4 text-muted-foreground" />
                   New Request
@@ -657,7 +662,7 @@ export default function ClientDashboard() {
               {featureRequests && featureRequests.length > 0 ? (
                 <div className="space-y-3">
                   {featureRequests.map((req) => (
-                    <div key={req.id} className="bg-card border border-border/60 rounded-xl p-4">
+                    <div key={req.id} className="glass glass-hover rounded-xl p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold">{req.title}</p>
@@ -678,7 +683,7 @@ export default function ClientDashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-card border border-border/60 rounded-2xl p-12 text-center">
+                <div className="glass glass-hover rounded-2xl p-12 text-center">
                   <MessageSquare className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
                   <p className="text-muted-foreground">No requests yet. Submit one above.</p>
                 </div>
@@ -687,6 +692,7 @@ export default function ClientDashboard() {
           )}
 
         </div>
+      </motion.div>
       </main>
     </div>
   );

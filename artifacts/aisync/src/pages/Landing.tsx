@@ -213,7 +213,7 @@ export default function Landing() {
               <span>+1 7138537974</span>
             </a>
             <Link href="/login" className="hover:text-[#211C16] transition-colors duration-200">Client login</Link>
-            <a href="#demo" style={{ border: "1px solid #211C16" }} className="text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">Request Custom Agent</a>
+            <Link href="/signup" style={{ border: "1px solid #211C16" }} className="btn-shine text-[#211C16] px-[18px] py-[9px] rounded-full font-semibold hover:bg-[#211C16] hover:text-[#F6F1E9] transition-all duration-300">Get started</Link>
           </div>
 
           {/* Simple Mobile Nav Trigger */}
@@ -225,7 +225,7 @@ export default function Landing() {
               <span>Chat</span>
             </a>
             <Link href="/login" className="text-xs font-semibold text-[#6B6155] px-2 py-1">Login</Link>
-            <a href="#demo" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Request Agent</a>
+            <Link href="/signup" className="text-xs bg-[#211C16] text-[#F6F1E9] px-4 py-2 rounded-full font-semibold">Sign up</Link>
           </div>
         </div>
       </nav>
@@ -253,7 +253,7 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-wrap items-center gap-4">
-              <a href="#watch" className="bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 transform hover:scale-[1.02]">
+              <a href="#watch" className="btn-shine bg-[#211C16] text-[#F6F1E9] px-[30px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#B8502E] transition-all duration-300 transform hover:scale-[1.02]">
                 Hear it answer a call
               </a>
               <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="bg-[#25D366] text-[#FFFDF9] px-[26px] py-4 rounded-full font-semibold text-[15px] hover:bg-[#20ba5a] transition-all duration-300 transform hover:scale-[1.02] flex items-center gap-2 shadow-sm">
@@ -262,8 +262,8 @@ export default function Landing() {
                 </svg>
                 WhatsApp Chat
               </a>
-              <Link href="/login" className="inline-flex items-center gap-2 font-semibold text-[15px] border-b-[1.5px] border-[#211C16] pb-[3px] text-[#211C16] hover:text-[#B8502E] hover:border-[#B8502E] transition-all duration-200">
-                Client login →
+              <Link href="/signup" className="inline-flex items-center gap-2 font-semibold text-[15px] border-b-[1.5px] border-[#211C16] pb-[3px] text-[#211C16] hover:text-[#B8502E] hover:border-[#B8502E] transition-all duration-200">
+                Sign up &amp; get your agent →
               </Link>
             </div>
             
@@ -305,7 +305,7 @@ export default function Landing() {
             </div>
 
             {/* Transcript Card Container */}
-            <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[28px] shadow-[0_28px_56px_-30px_rgba(33,28,22,0.4)] relative overflow-hidden transform-gpu">
+            <div className="glass-warm rounded-2xl p-[28px] shadow-[0_28px_56px_-30px_rgba(33,28,22,0.4)] relative overflow-hidden transform-gpu">
               <div className="flex items-center justify-between pb-4 border-b border-[#EFE7D8]">
                 <div className="flex items-center gap-[9px]">
                   <span className="w-2 h-2 rounded-full bg-[#4F9D69] animate-blip"></span>
@@ -534,8 +534,7 @@ export default function Landing() {
             ].map((feat, idx) => (
               <motion.div 
                 key={idx} 
-                style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} 
-                className="rounded-xl p-[30px] shadow-sm transform-gpu"
+                className="glass-warm rounded-xl p-[30px] shadow-sm transform-gpu"
                 variants={staggerItem}
                 whileHover={{ y: -6, scale: 1.01, boxShadow: "0 18px 36px -12px rgba(33,28,22,0.12)" }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -742,7 +741,7 @@ export default function Landing() {
 
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 items-stretch">
           {/* Sliders Left */}
-          <div style={{ background: "#FFFDF9", border: "1px solid #E9DFCE" }} className="rounded-2xl p-[36px] flex flex-col justify-center shadow-sm">
+          <div className="glass-warm lift rounded-2xl p-[36px] flex flex-col justify-center">
             
             {/* Missed Calls Slider */}
             <div className="mb-8">
@@ -799,7 +798,7 @@ export default function Landing() {
           </div>
 
           {/* Projection Card Right */}
-          <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[36px] flex flex-col justify-between shadow-xl">
+          <div className="bg-[#211C16] text-[#F6F1E9] rounded-2xl p-[36px] flex flex-col justify-between shadow-xl lift">
             <div>
               <span className="text-[12px] tracking-[0.14em] uppercase text-[#E0A98A] font-bold">Monthly projection</span>
               
@@ -822,9 +821,9 @@ export default function Landing() {
               </div>
             </div>
 
-            <a href="#demo" className="mt-8 block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#8f391e] transition-all duration-300 transform hover:scale-[1.01]">
+            <Link href="/signup" className="btn-shine mt-8 block text-center bg-[#B8502E] text-[#F6F1E9] py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#8f391e] transition-all duration-300 transform hover:scale-[1.01]">
               Build your custom agent
-            </a>
+            </Link>
           </div>
         </div>
       </motion.section>
@@ -991,6 +990,10 @@ export default function Landing() {
               </div>
 
               <div className="mt-10 pt-8 border-t border-[#3D352B]">
+                <Link href="/signup" className="btn-shine inline-flex items-center gap-2 bg-[#B8502E] text-[#FFFDF9] px-6 py-3.5 rounded-full font-semibold text-[15px] hover:bg-[#8f391e] transition-all mb-3">
+                  Create your account &amp; request your agent →
+                </Link>
+                <p className="text-[13px] text-[#9A8F7E] mb-6">Sign up, tell us what you need, and track progress, updates and invoices in your own client portal.</p>
                 <p className="text-[14px] text-[#C6BBAC] mb-4">Or connect with us directly right now:</p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a href="tel:+17138537974" className="inline-flex items-center gap-2.5 text-sm font-semibold text-[#F6F1E9] bg-[#3A3229] hover:bg-[#4D4337] px-5 py-3 rounded-full transition-all">
@@ -998,6 +1001,9 @@ export default function Landing() {
                   </a>
                   <a href="https://wa.me/17138537974" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2.5 text-sm font-semibold text-[#25D366] border border-[#25D366] hover:bg-[#25D366] hover:text-white px-5 py-3 rounded-full transition-all">
                     💬 WhatsApp Chat
+                  </a>
+                  <a href="https://wa.me/917000378376" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2.5 text-sm font-semibold text-[#25D366] border border-[#25D366] hover:bg-[#25D366] hover:text-white px-5 py-3 rounded-full transition-all">
+                    💬 WhatsApp (India): +91 70003 78376
                   </a>
                 </div>
               </div>

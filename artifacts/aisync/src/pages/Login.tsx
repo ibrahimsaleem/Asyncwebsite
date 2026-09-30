@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
+import AmbientBackground from "@/components/AmbientBackground";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -33,13 +34,17 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-8 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
+      <AmbientBackground />
+      <Link href="/" className="relative z-10 mb-6 flex items-center gap-1.5 text-foreground/90 hover:text-foreground transition-colors">
+        <span style={{ fontFamily: "'Instrument Serif', serif" }} className="text-[30px] leading-none tracking-tight">aicronics</span>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#B8502E] -translate-y-2" />
+      </Link>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-card/80 backdrop-blur-xl p-8 rounded-xl border border-border shadow-2xl relative z-10"
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md glass p-8 rounded-xl border border-border shadow-2xl relative z-10"
       >
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/20 text-primary mb-4 border border-primary/30">
@@ -64,7 +69,7 @@ export default function Login() {
               type="email" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
-              className="w-full bg-black/50 border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full bg-black/30 border border-white/10 rounded-lg hover:border-white/20 px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
               placeholder="name@company.com"
               required
             />
@@ -75,7 +80,7 @@ export default function Login() {
               type="password" 
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
-              className="w-full bg-black/50 border border-border rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              className="w-full bg-black/30 border border-white/10 rounded-lg hover:border-white/20 px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
               placeholder="••••••••"
               required
             />
@@ -83,14 +88,14 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-medium mt-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] disabled:opacity-50"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 rounded-lg font-medium mt-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] btn-shine hover:shadow-[0_0_32px_rgba(37,99,235,0.5)] disabled:opacity-50"
           >
             {loading ? "Authenticating..." : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-8 pt-6 border-t border-border/50 text-xs text-muted-foreground text-center">
-          Don't have an account? Your login is created when your project starts.
+        <p className="mt-8 pt-6 border-t border-border/50 text-sm text-muted-foreground text-center">
+          New to aicronics? <Link href="/signup" className="text-primary font-semibold hover:underline">Create an account</Link> and tell us what you need.
         </p>
       </motion.div>
     </div>

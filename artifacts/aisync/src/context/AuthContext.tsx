@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { useGetMe, getGetMeQueryKey, useLogin, useLogout, User } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useLogin, useLogout, useRegister, User } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: ReturnType<typeof useLogin>["mutateAsync"];
+  register: ReturnType<typeof useRegister>["mutateAsync"];
   logout: ReturnType<typeof useLogout>["mutateAsync"];
 }
 
@@ -31,6 +32,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const registerMutation = useRegister({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.setQueryData(getGetMeQueryKey(), data.user);
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      },
+    },
+  });
+
   const logoutMutation = useLogout({
     mutation: {
       onSuccess: () => {
@@ -46,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: user ?? null,
         isLoading: isUserLoading,
         login: loginMutation.mutateAsync,
+        register: registerMutation.mutateAsync,
         logout: logoutMutation.mutateAsync,
       }}
     >
