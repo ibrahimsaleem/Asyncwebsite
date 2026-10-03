@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
+import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
 import {
@@ -18,7 +19,7 @@ import {
   LayoutDashboard, Users, FolderKanban, UserCog, Receipt,
   Lightbulb, BookOpen, LogOut, X, Phone, Mail, Building2,
   TrendingUp, CheckCircle2, Clock, AlertCircle, ChevronRight,
-  Plus, Star, Calendar, Briefcase, Menu,
+  Plus, Calendar, Menu, RefreshCw,
 } from "lucide-react";
 
 type Tab = "overview" | "clients" | "projects" | "employees" | "invoices" | "feature-requests" | "demo-leads";
@@ -49,6 +50,14 @@ const PROJECT_STATUS_STYLES: Record<string, string> = {
   completed: "bg-emerald-500/15 text-emerald-400",
 };
 
+const PROJECT_STAGE_COLORS: Record<string, string> = {
+  onboarding: "bg-slate-400",
+  build_phase: "bg-blue-500",
+  demo_phase: "bg-purple-500",
+  testing: "bg-orange-500",
+  completed: "bg-emerald-500",
+};
+
 const INVOICE_STATUS_STYLES: Record<string, string> = {
   paid: "bg-emerald-500/15 text-emerald-400",
   partial: "bg-amber-500/15 text-amber-400",
@@ -64,12 +73,114 @@ const FR_STATUS_STYLES: Record<string, string> = {
   rejected: "bg-red-500/15 text-red-400",
 };
 
+const PRIORITY_STYLES: Record<string, string> = {
+  high: "bg-red-500/15 text-red-400",
+  medium: "bg-amber-500/15 text-amber-400",
+  low: "bg-secondary text-muted-foreground",
+};
+
+const NEUTRAL_PILL = "bg-secondary text-muted-foreground";
+const PILL = "inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap";
+const INPUT = "w-full bg-background border border-border rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50";
+const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+const SECONDARY_BTN = "inline-flex items-center justify-center gap-2 px-4 py-2 border border-border rounded-lg text-sm hover:bg-secondary transition-colors";
+const SECTION_LABEL = "text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3";
+
 function initials(name: string) {
-  return name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2);
+  return name.split(" ").filter(Boolean).map((p) => p[0]).join("").toUpperCase().slice(0, 2) || "?";
+}
+
+function titleCase(s: string) {
+  return s.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
 
 function frLabel(s: string) {
-  return s === "in_review" ? "In Review" : s.charAt(0).toUpperCase() + s.slice(1);
+  return titleCase(s);
+}
+
+function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+function money(value: number | string) {
+  const n = typeof value === "number" ? value : parseFloat(String(value));
+  return `$${(Number.isFinite(n) ? n : 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+function shortDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+// Prefer the API's own message ("Email already in use") over the HTTP status prefix
+function errorText(err: unknown) {
+  const data = (err as { data?: unknown } | null)?.data;
+  if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    const msg = d.error ?? d.message ?? d.detail;
+    if (typeof msg === "string" && msg.trim()) return msg;
+  }
+  return err instanceof Error && err.message ? err.message : "Something went wrong. Please try again.";
+}
+
+function notifyError(title: string, err: unknown) {
+  toast({ variant: "destructive", title, description: errorText(err) });
+}
+
+function Field({ label, hint, className = "", children }: { label: string; hint?: string; className?: string; children: React.ReactNode }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="text-xs font-medium text-muted-foreground block mb-1.5">{label}</span>
+      {children}
+      {hint && <span className="text-[11px] text-muted-foreground/70 block mt-1">{hint}</span>}
+    </label>
+  );
+}
+
+function PageHeader({ title, subtitle, action }: { title: string; subtitle?: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold">{title}</h1>
+        {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function ListState({ loading, error, onRetry, empty, icon: Icon, emptyTitle, emptyHint, compact }: {
+  loading: boolean; error: boolean; onRetry: () => void; empty: boolean;
+  icon: React.ElementType; emptyTitle: string; emptyHint?: string; compact?: boolean;
+}) {
+  const pad = compact ? "px-5 py-8" : "p-12 sm:p-16";
+  const wrap = compact ? `${pad} text-center` : `glass rounded-2xl ${pad} text-center`;
+  if (loading) {
+    return (
+      <div className={wrap}>
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className={wrap}>
+        <AlertCircle className="w-8 h-8 text-destructive/70 mx-auto mb-3" />
+        <p className="text-sm font-medium text-destructive">Couldn't load this data.</p>
+        <button onClick={onRetry} className="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+          <RefreshCw className="w-3.5 h-3.5" /> Try again
+        </button>
+      </div>
+    );
+  }
+  if (!empty) return null;
+  return (
+    <div className={wrap}>
+      <Icon className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+      <p className="text-sm text-muted-foreground">{emptyTitle}</p>
+      {emptyHint && <p className="text-xs text-muted-foreground/70 mt-1">{emptyHint}</p>}
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -102,14 +213,22 @@ export default function AdminDashboard() {
   const [newEmpEmail, setNewEmpEmail] = useState("");
   const [addingEmp, setAddingEmp] = useState(false);
   const [showEmpForm, setShowEmpForm] = useState(false);
+  const [removingEmpId, setRemovingEmpId] = useState<number | null>(null);
+  const [updatingRequestId, setUpdatingRequestId] = useState<number | null>(null);
 
-  const { data: summary, isLoading: summaryLoading, isError: summaryError } = useGetAdminSummary({ query: { queryKey: getGetAdminSummaryQueryKey() } });
-  const { data: clients } = useListClients({ query: { queryKey: getListClientsQueryKey() } });
-  const { data: projects } = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
-  const { data: employees } = useListEmployees({ query: { queryKey: getListEmployeesQueryKey() } });
-  const { data: invoices } = useListInvoices({ query: { queryKey: getListInvoicesQueryKey() } });
-  const { data: featureRequests } = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
-  const { data: demoRequests } = useListDemoRequests({ query: { queryKey: getListDemoRequestsQueryKey() } });
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useGetAdminSummary({ query: { queryKey: getGetAdminSummaryQueryKey() } });
+  const clientsQ = useListClients({ query: { queryKey: getListClientsQueryKey() } });
+  const projectsQ = useListProjects({ query: { queryKey: getListProjectsQueryKey() } });
+  const employeesQ = useListEmployees({ query: { queryKey: getListEmployeesQueryKey() } });
+  const invoicesQ = useListInvoices({ query: { queryKey: getListInvoicesQueryKey() } });
+  const featureRequestsQ = useListFeatureRequests({ query: { queryKey: getListFeatureRequestsQueryKey() } });
+  const demoRequestsQ = useListDemoRequests({ query: { queryKey: getListDemoRequestsQueryKey() } });
+  const clients = clientsQ.data;
+  const projects = projectsQ.data;
+  const employees = employeesQ.data;
+  const invoices = invoicesQ.data;
+  const featureRequests = featureRequestsQ.data;
+  const demoRequests = demoRequestsQ.data;
 
   const createClient = useCreateClient();
   const createProject = useCreateProject();
@@ -131,6 +250,14 @@ export default function AdminDashboard() {
   const clientInvoices = invoices?.filter((i) => i.clientId === selectedClientId) ?? [];
   const clientRequests = featureRequests?.filter((fr) => fr.clientId === selectedClientId) ?? [];
 
+  // Close the client panel with Escape
+  useEffect(() => {
+    if (selectedClientId === null) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedClientId(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedClientId]);
+
   async function handleAddClient(e: React.FormEvent) {
     e.preventDefault();
     setAddingClient(true);
@@ -140,6 +267,9 @@ export default function AdminDashboard() {
       setShowClientForm(false);
       qc.invalidateQueries({ queryKey: getListClientsQueryKey() });
       qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+      toast({ title: "Client created", description: `${newClientBusiness} can now sign in to the client portal.` });
+    } catch (err) {
+      notifyError("Couldn't create client", err);
     } finally { setAddingClient(false); }
   }
 
@@ -153,6 +283,9 @@ export default function AdminDashboard() {
       setShowProjectForm(false);
       qc.invalidateQueries({ queryKey: getListProjectsQueryKey() });
       qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+      toast({ title: "Project created", description: newProjName });
+    } catch (err) {
+      notifyError("Couldn't create project", err);
     } finally { setAddingProject(false); }
   }
 
@@ -180,6 +313,9 @@ export default function AdminDashboard() {
       setEditingProjectId(null);
       qc.invalidateQueries({ queryKey: getListProjectsQueryKey() });
       qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+      toast({ title: "Update posted", description: "The client will see it on their dashboard." });
+    } catch (err) {
+      notifyError("Couldn't save the update", err);
     } finally { setSavingProject(false); }
   }
 
@@ -190,18 +326,32 @@ export default function AdminDashboard() {
       await createEmployee.mutateAsync({ data: { name: newEmpName, role: newEmpRole, email: newEmpEmail } });
       setNewEmpName(""); setNewEmpRole(""); setNewEmpEmail(""); setShowEmpForm(false);
       qc.invalidateQueries({ queryKey: getListEmployeesQueryKey() });
+      toast({ title: "Team member added", description: newEmpName });
+    } catch (err) {
+      notifyError("Couldn't add team member", err);
     } finally { setAddingEmp(false); }
   }
 
   async function handleUpdateRequest(id: number, status: FeatureRequestUpdateStatus) {
-    await updateFeatureRequest.mutateAsync({ id, data: { status } });
-    qc.invalidateQueries({ queryKey: getListFeatureRequestsQueryKey() });
-    qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+    setUpdatingRequestId(id);
+    try {
+      await updateFeatureRequest.mutateAsync({ id, data: { status } });
+      qc.invalidateQueries({ queryKey: getListFeatureRequestsQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetAdminSummaryQueryKey() });
+    } catch (err) {
+      notifyError("Couldn't update the request", err);
+    } finally { setUpdatingRequestId(null); }
   }
 
-  async function handleDeleteEmployee(id: number) {
-    await deleteEmployee.mutateAsync({ id });
-    qc.invalidateQueries({ queryKey: getListEmployeesQueryKey() });
+  async function handleDeleteEmployee(id: number, name: string) {
+    if (!window.confirm(`Remove ${name} from the team?`)) return;
+    setRemovingEmpId(id);
+    try {
+      await deleteEmployee.mutateAsync({ id });
+      qc.invalidateQueries({ queryKey: getListEmployeesQueryKey() });
+    } catch (err) {
+      notifyError("Couldn't remove team member", err);
+    } finally { setRemovingEmpId(null); }
   }
 
   const navItems: { id: Tab; label: string; icon: React.ElementType }[] = [
@@ -227,10 +377,17 @@ export default function AdminDashboard() {
 
   if (summaryError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-destructive font-semibold mb-1">Failed to load panel</p>
-          <p className="text-sm text-muted-foreground">Please refresh the page.</p>
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="w-10 h-10 text-destructive/80 mx-auto mb-3" />
+          <p className="text-destructive font-semibold mb-1">Couldn't load the admin panel</p>
+          <p className="text-sm text-muted-foreground">Check your connection and try again. If it keeps happening, sign out and back in.</p>
+          <div className="flex justify-center gap-2 mt-5">
+            <button onClick={() => refetchSummary()} className={PRIMARY_BTN}>
+              <RefreshCw className="w-4 h-4" /> Try again
+            </button>
+            <button onClick={() => logout()} className={SECONDARY_BTN}>Sign out</button>
+          </div>
         </div>
       </div>
     );
@@ -242,6 +399,7 @@ export default function AdminDashboard() {
     return acc;
   }, {});
   const totalProjects = (projects ?? []).length;
+  const pendingRequests = (featureRequests ?? []).filter((r) => r.status === "new" || r.status === "in_review");
 
   return (
     <div className="min-h-screen md:flex bg-background text-foreground relative">
@@ -261,24 +419,32 @@ export default function AdminDashboard() {
       {navOpen && <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]" onClick={() => setNavOpen(false)} />}
 
       {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] md:relative md:z-10 md:w-60 md:max-w-none md:translate-x-0 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col overflow-y-auto transition-transform duration-300 ease-out ${navOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] md:sticky md:top-0 md:h-screen md:z-10 md:w-60 md:max-w-none md:translate-x-0 shrink-0 border-r border-white/[0.06] glass-sidebar flex flex-col overflow-y-auto transition-transform duration-300 ease-out ${navOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-5 border-b border-border/50 flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow">
             <TrendingUp className="w-3.5 h-3.5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="font-bold text-sm tracking-tight leading-none">aicronics</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">Admin Portal</p>
           </div>
+          <button onClick={() => setNavOpen(false)} aria-label="Close menu" className="md:hidden p-1.5 -mr-1.5 rounded-lg text-muted-foreground hover:bg-secondary/60">
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        <nav className="flex-1 p-3 flex flex-col gap-0.5 overflow-y-auto">
+        <nav className="flex-1 p-3 flex flex-col gap-0.5 overflow-y-auto" aria-label="Admin sections">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const badge =
+              item.id === "demo-leads" ? { count: demoRequests?.length ?? 0, cls: "bg-primary text-primary-foreground", label: "demo leads" } :
+              item.id === "feature-requests" ? { count: summary?.pendingFeatureRequests ?? 0, cls: "bg-amber-500 text-white", label: "pending requests" } :
+              null;
             return (
               <button
                 key={item.id}
                 onClick={() => { setTab(item.id); setNavOpen(false); }}
+                aria-current={tab === item.id ? "page" : undefined}
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center gap-3 ${
                   tab === item.id
                     ? "bg-primary/15 text-primary font-semibold"
@@ -287,14 +453,9 @@ export default function AdminDashboard() {
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 {item.label}
-                {item.id === "demo-leads" && (demoRequests?.length ?? 0) > 0 && (
-                  <span className="ml-auto bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                    {demoRequests!.length}
-                  </span>
-                )}
-                {item.id === "feature-requests" && (summary?.pendingFeatureRequests ?? 0) > 0 && (
-                  <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                    {summary!.pendingFeatureRequests}
+                {badge && badge.count > 0 && (
+                  <span className={`ml-auto min-w-[20px] text-center text-[10px] font-bold px-1.5 py-0.5 rounded-full ${badge.cls}`} aria-label={`${badge.count} ${badge.label}`}>
+                    {badge.count}
                   </span>
                 )}
               </button>
@@ -312,7 +473,7 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
-          <button onClick={() => logout()} className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-destructive transition-colors">
+          <button onClick={() => logout()} className="w-full flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
             <LogOut className="w-3.5 h-3.5" />
             Sign out
           </button>
@@ -326,64 +487,60 @@ export default function AdminDashboard() {
 
           {/* ── OVERVIEW ─────────────────────────────────────────────────── */}
           {tab === "overview" && (
-            <div>
-              <div className="mb-8">
+            <div className="space-y-6">
+              <div className="mb-2">
                 <h1 className="text-2xl font-bold">Good day, {user?.name?.split(" ")[0]} 👋</h1>
                 <p className="text-muted-foreground text-sm mt-1">Here's what's happening across your client base today.</p>
               </div>
 
               {/* KPI cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {[
-                  { label: "Total Clients",       value: summary?.totalClients ?? 0,           icon: Users,         color: "text-foreground",   accent: "bg-blue-500/10" },
-                  { label: "Active Projects",      value: summary?.activeProjects ?? 0,         icon: FolderKanban,  color: "text-primary",      accent: "bg-primary/10" },
-                  { label: "Completed Projects",   value: summary?.completedProjects ?? 0,      icon: CheckCircle2,  color: "text-emerald-400",  accent: "bg-emerald-500/10" },
-                  { label: "Revenue Collected",    value: `$${(summary?.totalPaid ?? 0).toLocaleString()}`,    icon: TrendingUp,    color: "text-emerald-400",  accent: "bg-emerald-500/10" },
-                  { label: "Outstanding Balance",  value: `$${(summary?.totalDue ?? 0).toLocaleString()}`,    icon: AlertCircle,   color: "text-destructive",  accent: "bg-destructive/10" },
-                  { label: "Pending Requests",     value: summary?.pendingFeatureRequests ?? 0, icon: Lightbulb,     color: "text-amber-400",    accent: "bg-amber-500/10" },
+                  { label: "Total Clients",       value: summary?.totalClients ?? 0,           icon: Users,         color: "text-foreground",   accent: "bg-blue-500/10",       go: "clients" as Tab },
+                  { label: "Active Projects",     value: summary?.activeProjects ?? 0,         icon: FolderKanban,  color: "text-primary",      accent: "bg-primary/10",        go: "projects" as Tab },
+                  { label: "Completed Projects",  value: summary?.completedProjects ?? 0,      icon: CheckCircle2,  color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "projects" as Tab },
+                  { label: "Revenue Collected",   value: money(summary?.totalPaid ?? 0),       icon: TrendingUp,    color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "invoices" as Tab },
+                  { label: "Outstanding Balance", value: money(summary?.totalDue ?? 0),        icon: AlertCircle,   color: "text-destructive",  accent: "bg-destructive/10",    go: "invoices" as Tab },
+                  { label: "Pending Requests",    value: summary?.pendingFeatureRequests ?? 0, icon: Lightbulb,     color: "text-amber-400",    accent: "bg-amber-500/10",      go: "feature-requests" as Tab },
                 ].map((m) => {
                   const Icon = m.icon;
                   return (
-                    <div key={m.label} className="glass glass-hover rounded-2xl p-5 hover:border-border transition-colors">
-                      <div className="flex items-start justify-between mb-4">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{m.label}</p>
-                        <div className={`w-8 h-8 rounded-lg ${m.accent} flex items-center justify-center`}>
+                    <button key={m.label} onClick={() => setTab(m.go)} className="text-left glass glass-hover rounded-2xl p-4 sm:p-5 hover:border-border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+                      <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
+                        <p className="text-[11px] sm:text-xs text-muted-foreground uppercase tracking-wider font-medium leading-snug">{m.label}</p>
+                        <div className={`w-8 h-8 rounded-lg ${m.accent} flex items-center justify-center shrink-0`}>
                           <Icon className={`w-4 h-4 ${m.color}`} />
                         </div>
                       </div>
-                      <p className={`text-3xl font-bold ${m.color}`}>{m.value}</p>
-                    </div>
+                      <p className={`text-2xl sm:text-3xl font-bold tabular-nums truncate ${m.color}`}>{m.value}</p>
+                    </button>
                   );
                 })}
               </div>
 
               {/* Project pipeline */}
               {totalProjects > 0 && (
-                <div className="glass glass-hover rounded-2xl p-6 mb-6">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <div className="glass glass-hover rounded-2xl p-5 sm:p-6">
+                  <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
                     <FolderKanban className="w-4 h-4 text-muted-foreground" />
                     Project Pipeline
+                    <span className="ml-auto text-xs font-normal text-muted-foreground">{plural(totalProjects, "project")}</span>
                   </h3>
-                  <div className="flex h-3 rounded-full overflow-hidden gap-0.5 mb-4">
+                  <div className="flex h-3 rounded-full overflow-hidden gap-0.5 mb-4 bg-secondary/40">
                     {Object.entries(PROJECT_STATUS_LABELS).map(([status, label]) => {
                       const count = stageCount[status] ?? 0;
                       const pct = (count / totalProjects) * 100;
                       if (!pct) return null;
-                      const colors: Record<string, string> = { onboarding: "bg-slate-400", build_phase: "bg-blue-500", demo_phase: "bg-purple-500", testing: "bg-orange-500", completed: "bg-emerald-500" };
-                      return <div key={status} className={`${colors[status]} rounded-full transition-all`} style={{ width: `${pct}%` }} title={`${label}: ${count}`} />;
+                      return <div key={status} className={`${PROJECT_STAGE_COLORS[status]} rounded-full transition-all`} style={{ width: `${pct}%` }} title={`${label}: ${count}`} />;
                     })}
                   </div>
-                  <div className="flex flex-wrap gap-4">
-                    {Object.entries(PROJECT_STATUS_LABELS).map(([status, label]) => {
-                      const count = stageCount[status] ?? 0;
-                      const dotColors: Record<string, string> = { onboarding: "bg-slate-400", build_phase: "bg-blue-500", demo_phase: "bg-purple-500", testing: "bg-orange-500", completed: "bg-emerald-500" };
-                      return (
-                        <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <span className={`w-2 h-2 rounded-full ${dotColors[status]}`} />
-                          {label} <span className="font-semibold text-foreground">{count}</span>
-                        </div>
-                      );
-                    })}
+                  <div className="flex flex-wrap gap-x-5 gap-y-2">
+                    {Object.entries(PROJECT_STATUS_LABELS).map(([status, label]) => (
+                      <div key={status} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className={`w-2 h-2 rounded-full ${PROJECT_STAGE_COLORS[status]}`} />
+                        {label} <span className="font-semibold text-foreground tabular-nums">{stageCount[status] ?? 0}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -408,14 +565,15 @@ export default function AdminDashboard() {
                             <p className="text-xs text-muted-foreground truncate">{d.businessName}</p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${is.bg} ${is.text}`}>{d.industry}</span>
-                            <span className="text-xs text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</span>
+                            {d.industry && <span className={`${PILL} ${is.bg} ${is.text} hidden sm:inline-flex`}>{d.industry}</span>}
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">{shortDate(d.createdAt)}</span>
                           </div>
                         </div>
                       );
                     })}
-                    {(demoRequests ?? []).length === 0 && <p className="px-5 py-8 text-sm text-muted-foreground text-center">No demo leads yet.</p>}
                   </div>
+                  <ListState compact loading={demoRequestsQ.isLoading} error={demoRequestsQ.isError} onRetry={() => demoRequestsQ.refetch()}
+                    empty={(demoRequests ?? []).length === 0} icon={BookOpen} emptyTitle="No demo leads yet." />
                 </div>
 
                 {/* Pending feature requests */}
@@ -428,19 +586,18 @@ export default function AdminDashboard() {
                     <button onClick={() => setTab("feature-requests")} className="text-xs text-primary hover:underline">View all</button>
                   </div>
                   <div className="divide-y divide-border/30">
-                    {(featureRequests ?? []).filter((r) => r.status === "new" || r.status === "in_review").slice(0, 4).map((r) => (
+                    {pendingRequests.slice(0, 4).map((r) => (
                       <div key={r.id} className="px-5 py-3.5 flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{r.title}</p>
-                          <p className="text-xs text-muted-foreground">{r.clientBusinessName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{r.clientBusinessName}</p>
                         </div>
-                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${FR_STATUS_STYLES[r.status]}`}>{frLabel(r.status)}</span>
+                        <span className={`${PILL} ${FR_STATUS_STYLES[r.status] ?? NEUTRAL_PILL}`}>{frLabel(r.status)}</span>
                       </div>
                     ))}
-                    {(featureRequests ?? []).filter((r) => r.status === "new" || r.status === "in_review").length === 0 && (
-                      <p className="px-5 py-8 text-sm text-muted-foreground text-center">All caught up!</p>
-                    )}
                   </div>
+                  <ListState compact loading={featureRequestsQ.isLoading} error={featureRequestsQ.isError} onRetry={() => featureRequestsQ.refetch()}
+                    empty={pendingRequests.length === 0} icon={CheckCircle2} emptyTitle="All caught up — nothing waiting for review." />
                 </div>
               </div>
             </div>
@@ -449,31 +606,49 @@ export default function AdminDashboard() {
           {/* ── CLIENTS ──────────────────────────────────────────────────── */}
           {tab === "clients" && (
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold">Clients</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">{(clients ?? []).length} active accounts</p>
-                </div>
-                <button onClick={() => setShowClientForm((v) => !v)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                  <Plus className="w-4 h-4" />
-                  {showClientForm ? "Cancel" : "Add Client"}
-                </button>
-              </div>
+              <PageHeader
+                title="Clients"
+                subtitle={clientsQ.isLoading ? "Loading…" : plural((clients ?? []).length, "client account")}
+                action={
+                  <button onClick={() => setShowClientForm((v) => !v)} className={showClientForm ? SECONDARY_BTN : PRIMARY_BTN}>
+                    {showClientForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> Add Client</>}
+                  </button>
+                }
+              />
 
               {showClientForm && (
-                <form onSubmit={handleAddClient} className="glass glass-hover rounded-2xl p-6 mb-6">
-                  <h3 className="font-semibold mb-4 text-sm">New Client Account</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input required value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    <input required value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} placeholder="Email address" type="email" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    <input required value={newClientBusiness} onChange={(e) => setNewClientBusiness(e.target.value)} placeholder="Business name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    <input value={newClientIndustry} onChange={(e) => setNewClientIndustry(e.target.value)} placeholder="Industry" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    <input value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} placeholder="Phone number" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    <input value={newClientPassword} onChange={(e) => setNewClientPassword(e.target.value)} placeholder="Portal password (optional)" type="password" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <form onSubmit={handleAddClient} className="glass rounded-2xl p-5 sm:p-6 mb-6">
+                  <h3 className="font-semibold text-sm">New client account</h3>
+                  <p className="text-xs text-muted-foreground mt-1 mb-5">Creates a client portal login for this business.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Contact name *">
+                      <input required value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Jane Smith" autoComplete="off" className={INPUT} />
+                    </Field>
+                    <Field label="Email (used to sign in) *">
+                      <input required value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} placeholder="jane@business.com" type="email" autoComplete="off" className={INPUT} />
+                    </Field>
+                    <Field label="Business name *">
+                      <input required value={newClientBusiness} onChange={(e) => setNewClientBusiness(e.target.value)} placeholder="Smith Dental" className={INPUT} />
+                    </Field>
+                    <Field label="Industry">
+                      <input value={newClientIndustry} onChange={(e) => setNewClientIndustry(e.target.value)} placeholder="Healthcare" list="admin-industries" className={INPUT} />
+                      <datalist id="admin-industries">
+                        {Object.keys(INDUSTRY_STYLES).map((ind) => <option key={ind} value={ind} />)}
+                      </datalist>
+                    </Field>
+                    <Field label="Phone">
+                      <input value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} placeholder="+1 555 123 4567" type="tel" className={INPUT} />
+                    </Field>
+                    <Field label="Portal password" hint="Optional. Leave empty if the client will set their own.">
+                      <input value={newClientPassword} onChange={(e) => setNewClientPassword(e.target.value)} type="password" autoComplete="new-password" className={INPUT} />
+                    </Field>
                   </div>
-                  <button type="submit" disabled={addingClient} className="mt-4 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                    {addingClient ? "Creating…" : "Create Client"}
-                  </button>
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    <button type="submit" disabled={addingClient} className={PRIMARY_BTN}>
+                      {addingClient ? "Creating…" : "Create client"}
+                    </button>
+                    <button type="button" onClick={() => setShowClientForm(false)} className={SECONDARY_BTN}>Cancel</button>
+                  </div>
                 </form>
               )}
 
@@ -486,154 +661,162 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={c.id}
-                      className="glass glass-hover rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Open details for ${c.businessName}`}
+                      className="glass glass-hover rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                       onClick={() => setSelectedClientId(c.id)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedClientId(c.id); } }}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-11 h-11 rounded-xl ${is.bg} flex items-center justify-center text-sm font-bold ${is.text} shrink-0`}>
                             {initials(c.userName ?? c.businessName)}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">{c.userName}</p>
+                            <p className="font-semibold text-sm truncate">{c.userName ?? c.businessName}</p>
                             <p className="text-xs text-muted-foreground truncate">{c.businessName}</p>
                           </div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
                       </div>
 
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${is.bg} ${is.text}`}>{c.industry}</span>
-                        {clientProject && (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${PROJECT_STATUS_STYLES[clientProject.status]}`}>
-                            {PROJECT_STATUS_LABELS[clientProject.status]}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <Phone className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{c.phone}</span>
+                      {(c.industry || clientProject) && (
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                          {c.industry && <span className={`${PILL} ${is.bg} ${is.text}`}>{c.industry}</span>}
+                          {clientProject && (
+                            <span className={`${PILL} ${PROJECT_STATUS_STYLES[clientProject.status] ?? NEUTRAL_PILL}`}>
+                              {PROJECT_STATUS_LABELS[clientProject.status] ?? titleCase(clientProject.status)}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                      )}
+
+                      <div className="space-y-1.5 text-xs text-muted-foreground mt-auto">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <Mail className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">{c.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{c.phone || "No phone on file"}</span>
                         </div>
                       </div>
 
                       {outstanding > 0 && (
                         <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Outstanding</span>
-                          <span className="text-destructive font-semibold">${outstanding.toLocaleString()}</span>
+                          <span className="text-destructive font-semibold tabular-nums">{money(outstanding)}</span>
                         </div>
                       )}
                     </div>
                   );
                 })}
               </div>
-              {(clients ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No clients yet. Add your first one above.</div>}
+              <ListState loading={clientsQ.isLoading} error={clientsQ.isError} onRetry={() => clientsQ.refetch()}
+                empty={(clients ?? []).length === 0} icon={Users} emptyTitle="No clients yet." emptyHint="Use “Add Client” to create the first account." />
             </div>
           )}
 
           {/* ── PROJECTS ─────────────────────────────────────────────────── */}
           {tab === "projects" && (
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold">Projects</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">{(projects ?? []).length} total projects</p>
-                </div>
-                <button onClick={() => setShowProjectForm((v) => !v)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                  <Plus className="w-4 h-4" />
-                  {showProjectForm ? "Cancel" : "New Project"}
-                </button>
-              </div>
+              <PageHeader
+                title="Projects"
+                subtitle={projectsQ.isLoading ? "Loading…" : plural(totalProjects, "project")}
+                action={
+                  <button onClick={() => setShowProjectForm((v) => !v)} className={showProjectForm ? SECONDARY_BTN : PRIMARY_BTN}>
+                    {showProjectForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> New Project</>}
+                  </button>
+                }
+              />
 
               {showProjectForm && (
-                <form onSubmit={handleAddProject} className="glass glass-hover rounded-2xl p-6 mb-6">
-                  <h3 className="font-semibold mb-4 text-sm">New Project</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <select required value={newProjClientId} onChange={(e) => setNewProjClientId(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        <option value="">Select client…</option>
+                <form onSubmit={handleAddProject} className="glass rounded-2xl p-5 sm:p-6 mb-6">
+                  <h3 className="font-semibold text-sm">New project</h3>
+                  <p className="text-xs text-muted-foreground mt-1 mb-5">The client will see this project and its stage on their dashboard.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Client *" className="sm:col-span-2">
+                      <select required value={newProjClientId} onChange={(e) => setNewProjClientId(e.target.value)} className={INPUT}>
+                        <option value="">{(clients ?? []).length ? "Select a client…" : "No clients yet — add one first"}</option>
                         {clients?.map((c) => <option key={c.id} value={c.id}>{c.businessName} ({c.userEmail})</option>)}
                       </select>
-                    </div>
-                    <input required value={newProjName} onChange={(e) => setNewProjName(e.target.value)} placeholder="Project name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    <select value={newProjStatus} onChange={(e) => setNewProjStatus(e.target.value)} className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                      {Object.entries(PROJECT_STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
-                    </select>
-                    <div className="sm:col-span-2">
-                      <textarea required value={newProjDesc} onChange={(e) => setNewProjDesc(e.target.value)} placeholder="Project description" rows={2} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1">Start date</label>
-                      <input type="date" value={newProjStart} onChange={(e) => setNewProjStart(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1">Expected completion</label>
-                      <input type="date" value={newProjEnd} onChange={(e) => setNewProjEnd(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                    </div>
+                    </Field>
+                    <Field label="Project name *">
+                      <input required value={newProjName} onChange={(e) => setNewProjName(e.target.value)} placeholder="Front-desk call agent" className={INPUT} />
+                    </Field>
+                    <Field label="Stage">
+                      <select value={newProjStatus} onChange={(e) => setNewProjStatus(e.target.value)} className={INPUT}>
+                        {Object.entries(PROJECT_STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Description *" className="sm:col-span-2">
+                      <textarea required value={newProjDesc} onChange={(e) => setNewProjDesc(e.target.value)} placeholder="What we're building for this client" rows={3} className={`${INPUT} resize-none`} />
+                    </Field>
+                    <Field label="Start date">
+                      <input type="date" value={newProjStart} onChange={(e) => setNewProjStart(e.target.value)} className={INPUT} />
+                    </Field>
+                    <Field label="Expected completion">
+                      <input type="date" value={newProjEnd} min={newProjStart || undefined} onChange={(e) => setNewProjEnd(e.target.value)} className={INPUT} />
+                    </Field>
                   </div>
-                  <button type="submit" disabled={addingProject || !newProjClientId} className="mt-4 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                    {addingProject ? "Creating…" : "Create Project"}
-                  </button>
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    <button type="submit" disabled={addingProject || !newProjClientId} className={PRIMARY_BTN}>
+                      {addingProject ? "Creating…" : "Create project"}
+                    </button>
+                    <button type="button" onClick={() => setShowProjectForm(false)} className={SECONDARY_BTN}>Cancel</button>
+                  </div>
                 </form>
               )}
 
               <div className="space-y-4">
                 {(projects ?? []).map((p) => {
-                  const statusStyle = PROJECT_STATUS_STYLES[p.status] ?? "bg-secondary text-muted-foreground";
-                  const client = clients?.find((c) => c.id === p.clientId);
-                  const is = client ? industryStyle(client.industry) : { bg: "bg-secondary", text: "text-muted-foreground", dot: "bg-muted" };
+                  const statusStyle = PROJECT_STATUS_STYLES[p.status] ?? NEUTRAL_PILL;
+                  const isEditing = editingProjectId === p.id;
                   return (
-                    <div key={p.id} className="glass glass-hover rounded-2xl p-5">
+                    <div key={p.id} className={`glass glass-hover rounded-2xl p-5 ${isEditing ? "ring-1 ring-primary/40" : ""}`}>
                       <div className="flex items-start justify-between gap-4 mb-3">
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold truncate">{p.projectName}</p>
-                            <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${statusStyle}`}>{PROJECT_STATUS_LABELS[p.status]}</span>
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <p className="font-semibold break-words">{p.projectName}</p>
+                            <span className={`${PILL} ${statusStyle}`}>{PROJECT_STATUS_LABELS[p.status] ?? titleCase(p.status)}</span>
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
                         </div>
-                        {editingProjectId !== p.id && (
+                        {!isEditing && (
                           <button onClick={() => startEditProject(p)} className="shrink-0 px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-semibold hover:bg-primary/25 transition-colors">
-                            Update
+                            Post update
                           </button>
                         )}
                       </div>
-                      {editingProjectId === p.id && (
+                      {isEditing && (
                         <form onSubmit={handleSaveProject} className="mb-4 p-4 bg-background/60 border border-border rounded-xl">
-                          <p className="text-xs text-muted-foreground mb-3">The client sees the stage and this message on their dashboard as "Latest update from your team".</p>
+                          <p className="text-xs text-muted-foreground mb-3">The client sees the stage and this message on their dashboard as “Latest update from your team”.</p>
                           {p.latestUpdate && (
-                            <p className="text-xs mb-3 p-2.5 rounded-lg bg-secondary/60"><span className="font-semibold text-foreground">Current message: </span>{p.latestUpdate}</p>
+                            <p className="text-xs mb-4 p-2.5 rounded-lg bg-secondary/60"><span className="font-semibold text-foreground">Current message: </span>{p.latestUpdate}</p>
                           )}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-xs text-muted-foreground block mb-1">Stage</label>
-                              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Field label="Stage">
+                              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className={INPUT}>
                                 {Object.entries(PROJECT_STATUS_LABELS).map(([val, label]) => <option key={val} value={val}>{label}</option>)}
                               </select>
-                            </div>
-                            <div>
-                              <label className="text-xs text-muted-foreground block mb-1">Expected completion</label>
-                              <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="text-xs text-muted-foreground block mb-1">New update for the client (leave empty to keep the current message)</label>
-                              <textarea value={editUpdate} onChange={(e) => setEditUpdate(e.target.value)} rows={3} placeholder="e.g. Consultation done — we're now building your agent's script and booking rules." className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                            </div>
+                            </Field>
+                            <Field label="Expected completion">
+                              <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className={INPUT} />
+                            </Field>
+                            <Field label="New message for the client" hint="Leave empty to keep the current message." className="sm:col-span-2">
+                              <textarea value={editUpdate} onChange={(e) => setEditUpdate(e.target.value)} rows={3} placeholder="e.g. Consultation done — we're now building your agent's script and booking rules." className={`${INPUT} resize-none`} />
+                            </Field>
                           </div>
-                          <div className="flex gap-2 mt-3">
-                            <button type="submit" disabled={savingProject} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            <button type="submit" disabled={savingProject} className={PRIMARY_BTN}>
                               {savingProject ? "Saving…" : "Save update"}
                             </button>
-                            <button type="button" onClick={() => setEditingProjectId(null)} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-secondary transition-colors">Cancel</button>
+                            <button type="button" onClick={() => setEditingProjectId(null)} className={SECONDARY_BTN}>Cancel</button>
                           </div>
                         </form>
                       )}
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                         {p.clientBusinessName && (
                           <span className="flex items-center gap-1.5">
                             <Building2 className="w-3.5 h-3.5" /> {p.clientBusinessName}
@@ -641,36 +824,37 @@ export default function AdminDashboard() {
                         )}
                         {p.startDate && (
                           <span className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5" /> Started {new Date(p.startDate).toLocaleDateString()}
+                            <Calendar className="w-3.5 h-3.5" /> Started {shortDate(p.startDate)}
                           </span>
                         )}
                         {p.expectedCompletionDate && (
                           <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" /> Due {new Date(p.expectedCompletionDate).toLocaleDateString()}
+                            <Clock className="w-3.5 h-3.5" /> Due {shortDate(p.expectedCompletionDate)}
                           </span>
                         )}
                         {p.employees && p.employees.length > 0 && (
                           <span className="flex items-center gap-1.5">
-                            <div className="flex -space-x-1">
+                            <span className="flex -space-x-1">
                               {p.employees.slice(0, 3).map((e) => (
-                                <div key={e.id} className="w-5 h-5 rounded-full bg-primary/20 border border-background flex items-center justify-center text-[9px] font-bold text-primary" title={e.name}>
+                                <span key={e.id} className="w-5 h-5 rounded-full bg-primary/20 border border-background flex items-center justify-center text-[9px] font-bold text-primary" title={e.name}>
                                   {initials(e.name)}
-                                </div>
+                                </span>
                               ))}
-                            </div>
-                            {p.employees.length} member{p.employees.length !== 1 ? "s" : ""}
+                            </span>
+                            {plural(p.employees.length, "member")}
                           </span>
                         )}
                       </div>
-                      {p.latestUpdate && (
+                      {p.latestUpdate && !isEditing && (
                         <div className="mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">Update: </span>{p.latestUpdate}
+                          <span className="font-semibold text-foreground">Latest update: </span>{p.latestUpdate}
                         </div>
                       )}
                     </div>
                   );
                 })}
-                {(projects ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No projects yet.</div>}
+                <ListState loading={projectsQ.isLoading} error={projectsQ.isError} onRetry={() => projectsQ.refetch()}
+                  empty={totalProjects === 0} icon={FolderKanban} emptyTitle="No projects yet." emptyHint="Use “New Project” to start one for a client." />
               </div>
             </div>
           )}
@@ -678,62 +862,76 @@ export default function AdminDashboard() {
           {/* ── EMPLOYEES ────────────────────────────────────────────────── */}
           {tab === "employees" && (
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold">Team</h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">{(employees ?? []).length} team members</p>
-                </div>
-                <button onClick={() => setShowEmpForm((v) => !v)} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                  <Plus className="w-4 h-4" />
-                  {showEmpForm ? "Cancel" : "Add Member"}
-                </button>
-              </div>
+              <PageHeader
+                title="Team"
+                subtitle={employeesQ.isLoading ? "Loading…" : plural((employees ?? []).length, "team member")}
+                action={
+                  <button onClick={() => setShowEmpForm((v) => !v)} className={showEmpForm ? SECONDARY_BTN : PRIMARY_BTN}>
+                    {showEmpForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> Add Member</>}
+                  </button>
+                }
+              />
 
               {showEmpForm && (
-                <form onSubmit={handleAddEmployee} className="glass glass-hover rounded-2xl p-6 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <input required value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} placeholder="Full name" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                  <input required value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value)} placeholder="Role title" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                  <input required value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} placeholder="Email" type="email" className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                  <button type="submit" disabled={addingEmp} className="sm:col-span-3 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                    {addingEmp ? "Adding…" : "Add Team Member"}
-                  </button>
+                <form onSubmit={handleAddEmployee} className="glass rounded-2xl p-5 sm:p-6 mb-6">
+                  <h3 className="font-semibold text-sm mb-5">New team member</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Field label="Full name *">
+                      <input required value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} placeholder="Alex Johnson" className={INPUT} />
+                    </Field>
+                    <Field label="Role *">
+                      <input required value={newEmpRole} onChange={(e) => setNewEmpRole(e.target.value)} placeholder="Voice Agent Engineer" className={INPUT} />
+                    </Field>
+                    <Field label="Email *">
+                      <input required value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} placeholder="alex@aicronics.com" type="email" className={INPUT} />
+                    </Field>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    <button type="submit" disabled={addingEmp} className={PRIMARY_BTN}>
+                      {addingEmp ? "Adding…" : "Add team member"}
+                    </button>
+                    <button type="button" onClick={() => setShowEmpForm(false)} className={SECONDARY_BTN}>Cancel</button>
+                  </div>
                 </form>
               )}
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(employees ?? []).map((emp) => {
                   const projectCount = (projects ?? []).filter((p) => p.employees?.some((e) => e.id === emp.id)).length;
+                  const removing = removingEmpId === emp.id;
                   return (
-                    <div key={emp.id} className="glass glass-hover rounded-2xl p-5 flex items-start gap-4">
+                    <div key={emp.id} className={`glass glass-hover rounded-2xl p-5 flex items-start gap-4 transition-opacity ${removing ? "opacity-50" : ""}`}>
                       <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                         {initials(emp.name)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm">{emp.name}</p>
-                        <p className="text-xs text-primary/80 font-medium">{emp.role}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{emp.email}</p>
-                        {projectCount > 0 && (
-                          <p className="text-xs text-muted-foreground mt-1">{projectCount} active project{projectCount !== 1 ? "s" : ""}</p>
-                        )}
+                        <p className="font-semibold text-sm truncate">{emp.name}</p>
+                        <p className="text-xs text-primary/80 font-medium truncate">{emp.role}</p>
+                        <a href={`mailto:${emp.email}`} className="block text-xs text-muted-foreground hover:text-primary mt-1 truncate">{emp.email}</a>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {projectCount > 0 ? `Assigned to ${plural(projectCount, "project")}` : "Not assigned to a project"}
+                        </p>
                       </div>
-                      <button onClick={() => handleDeleteEmployee(emp.id)} className="text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0">
-                        Remove
+                      <button
+                        onClick={() => handleDeleteEmployee(emp.id, emp.name)}
+                        disabled={removing}
+                        className="text-xs text-muted-foreground hover:text-destructive disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        {removing ? "Removing…" : "Remove"}
                       </button>
                     </div>
                   );
                 })}
               </div>
-              {(employees ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No team members yet.</div>}
+              <ListState loading={employeesQ.isLoading} error={employeesQ.isError} onRetry={() => employeesQ.refetch()}
+                empty={(employees ?? []).length === 0} icon={UserCog} emptyTitle="No team members yet." emptyHint="Use “Add Member” to add your first teammate." />
             </div>
           )}
 
           {/* ── INVOICES ─────────────────────────────────────────────────── */}
           {tab === "invoices" && (
             <div>
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold">Invoices</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">All billing records across clients</p>
-              </div>
+              <PageHeader title="Invoices" subtitle="All billing records across clients" />
 
               {/* Summary bar */}
               {(invoices ?? []).length > 0 && (
@@ -743,78 +941,86 @@ export default function AdminDashboard() {
                     { label: "Collected", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0), color: "text-emerald-400" },
                     { label: "Outstanding", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0), color: "text-destructive" },
                   ].map((s) => (
-                    <div key={s.label} className="glass glass-hover rounded-xl p-4">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{s.label}</p>
-                      <p className={`text-2xl font-bold ${s.color}`}>${s.value.toLocaleString()}</p>
+                    <div key={s.label} className="glass glass-hover rounded-2xl p-5">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">{s.label}</p>
+                      <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{money(s.value)}</p>
                     </div>
                   ))}
                 </div>
               )}
 
-              <div className="glass glass-hover rounded-2xl overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50 bg-secondary/20">
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Invoice</th>
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Client</th>
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Total</th>
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Collected</th>
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Balance</th>
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Status</th>
-                      <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Due Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {(invoices ?? []).map((inv) => (
-                      <tr key={inv.id} className="hover:bg-secondary/10 transition-colors">
-                        <td className="px-5 py-3.5 font-medium text-xs text-muted-foreground">{inv.id}</td>
-                        <td className="px-5 py-3.5 font-medium">{inv.clientBusinessName ?? inv.clientId}</td>
-                        <td className="px-5 py-3.5 font-semibold">${parseFloat(String(inv.totalAmount)).toLocaleString()}</td>
-                        <td className="px-5 py-3.5 text-emerald-400 font-medium">${parseFloat(String(inv.paidAmount)).toLocaleString()}</td>
-                        <td className="px-5 py-3.5 text-destructive font-medium">${parseFloat(String(inv.dueAmount)).toLocaleString()}</td>
-                        <td className="px-5 py-3.5">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${INVOICE_STATUS_STYLES[inv.status] ?? "bg-secondary text-muted-foreground"}`}>{inv.status}</span>
-                        </td>
-                        <td className="px-5 py-3.5 text-muted-foreground">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "—"}</td>
+              {(invoices ?? []).length > 0 ? (
+                <div className="glass glass-hover rounded-2xl overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50 bg-secondary/20">
+                        {["Invoice", "Client", "Total", "Collected", "Balance", "Status", "Due date"].map((h, i) => (
+                          <th key={h} className={`px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider ${i >= 2 && i <= 4 ? "text-right" : "text-left"}`}>{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {(invoices ?? []).length === 0 && <p className="py-16 text-center text-muted-foreground">No invoices yet.</p>}
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {(invoices ?? []).map((inv) => {
+                        const due = parseFloat(String(inv.dueAmount));
+                        return (
+                          <tr key={inv.id} className="hover:bg-secondary/10 transition-colors">
+                            <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">#{inv.id}</td>
+                            <td className="px-5 py-3.5 font-medium">{inv.clientBusinessName ?? `Client #${inv.clientId}`}</td>
+                            <td className="px-5 py-3.5 font-semibold text-right tabular-nums">{money(inv.totalAmount)}</td>
+                            <td className="px-5 py-3.5 text-emerald-400 font-medium text-right tabular-nums">{money(inv.paidAmount)}</td>
+                            <td className={`px-5 py-3.5 font-medium text-right tabular-nums ${due > 0 ? "text-destructive" : "text-muted-foreground"}`}>{money(due)}</td>
+                            <td className="px-5 py-3.5">
+                              <span className={`${PILL} ${INVOICE_STATUS_STYLES[inv.status] ?? NEUTRAL_PILL}`}>{titleCase(inv.status)}</span>
+                            </td>
+                            <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap">{inv.dueDate ? shortDate(inv.dueDate) : "—"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <ListState loading={invoicesQ.isLoading} error={invoicesQ.isError} onRetry={() => invoicesQ.refetch()}
+                  empty icon={Receipt} emptyTitle="No invoices yet." />
+              )}
             </div>
           )}
 
           {/* ── FEATURE REQUESTS ─────────────────────────────────────────── */}
           {tab === "feature-requests" && (
             <div>
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold">Feature Requests</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">Review and action client change requests</p>
-              </div>
+              <PageHeader
+                title="Feature Requests"
+                subtitle={featureRequestsQ.isLoading ? "Loading…" : `${pendingRequests.length} waiting for review · ${plural((featureRequests ?? []).length, "request")} total`}
+              />
               <div className="space-y-3">
-                {(featureRequests ?? []).map((req) => (
-                  <div key={req.id} className="glass glass-hover rounded-2xl p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <p className="font-semibold text-sm">{req.title}</p>
-                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${req.priority === "high" ? "bg-red-500/15 text-red-400" : req.priority === "medium" ? "bg-amber-500/15 text-amber-400" : "bg-secondary text-muted-foreground"}`}>{req.priority}</span>
-                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${FR_STATUS_STYLES[req.status]}`}>{frLabel(req.status)}</span>
+                {(featureRequests ?? []).map((req) => {
+                  const actionable = req.status === FeatureRequestStatus.new || req.status === FeatureRequestStatus.in_review;
+                  const busy = updatingRequestId === req.id;
+                  return (
+                    <div key={req.id} className="glass glass-hover rounded-2xl p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <p className="font-semibold text-sm">{req.title}</p>
+                            <span className={`${PILL} ${PRIORITY_STYLES[req.priority] ?? NEUTRAL_PILL}`}>{titleCase(req.priority)} priority</span>
+                            <span className={`${PILL} ${FR_STATUS_STYLES[req.status] ?? NEUTRAL_PILL}`}>{frLabel(req.status)}</span>
+                          </div>
+                          {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
+                          {req.clientBusinessName && <p className="text-xs text-muted-foreground/70 mt-1.5 flex items-center gap-1"><Building2 className="w-3 h-3" /> {req.clientBusinessName}</p>}
                         </div>
-                        {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
-                        {req.clientBusinessName && <p className="text-xs text-muted-foreground/70 mt-1.5 flex items-center gap-1"><Building2 className="w-3 h-3" /> {req.clientBusinessName}</p>}
+                        {actionable && (
+                          <div className="flex gap-2 shrink-0">
+                            <button disabled={busy} onClick={() => handleUpdateRequest(req.id, FeatureRequestUpdateStatus.approved)} className="px-3 py-1.5 bg-emerald-500/15 text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Approve</button>
+                            <button disabled={busy} onClick={() => handleUpdateRequest(req.id, FeatureRequestUpdateStatus.rejected)} className="px-3 py-1.5 bg-red-500/15 text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Reject</button>
+                          </div>
+                        )}
                       </div>
-                      {(req.status === FeatureRequestStatus.new || req.status === FeatureRequestStatus.in_review) && (
-                        <div className="flex gap-2 shrink-0">
-                          <button onClick={() => handleUpdateRequest(req.id, FeatureRequestUpdateStatus.approved)} className="px-3 py-1.5 bg-emerald-500/15 text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-500/25 transition-colors">Approve</button>
-                          <button onClick={() => handleUpdateRequest(req.id, FeatureRequestUpdateStatus.rejected)} className="px-3 py-1.5 bg-red-500/15 text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/25 transition-colors">Reject</button>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
-                {(featureRequests ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No feature requests yet.</div>}
+                  );
+                })}
+                <ListState loading={featureRequestsQ.isLoading} error={featureRequestsQ.isError} onRetry={() => featureRequestsQ.refetch()}
+                  empty={(featureRequests ?? []).length === 0} icon={Lightbulb} emptyTitle="No feature requests yet." emptyHint="Requests clients submit from their portal will appear here." />
               </div>
             </div>
           )}
@@ -822,16 +1028,16 @@ export default function AdminDashboard() {
           {/* ── DEMO LEADS ───────────────────────────────────────────────── */}
           {tab === "demo-leads" && (
             <div>
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold">Demo Leads</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">{(demoRequests ?? []).length} businesses have requested a demo</p>
-              </div>
+              <PageHeader
+                title="Demo Leads"
+                subtitle={demoRequestsQ.isLoading ? "Loading…" : `${(demoRequests ?? []).length} ${(demoRequests ?? []).length === 1 ? "business has" : "businesses have"} requested a demo`}
+              />
               <div className="space-y-4">
                 {(demoRequests ?? []).map((d) => {
                   const is = industryStyle(d.industry);
                   return (
                     <div key={d.id} className="glass glass-hover rounded-2xl p-5">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div className="flex items-start gap-4 flex-1 min-w-0">
                           <div className={`w-10 h-10 rounded-xl ${is.bg} flex items-center justify-center text-xs font-bold ${is.text} shrink-0`}>
                             {initials(d.name)}
@@ -839,28 +1045,31 @@ export default function AdminDashboard() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-semibold text-sm">{d.name}</p>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${is.bg} ${is.text}`}>{d.industry}</span>
+                              {d.industry && <span className={`${PILL} ${is.bg} ${is.text}`}>{d.industry}</span>}
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">{d.businessName}</p>
-                            {d.message && <p className="text-xs text-muted-foreground mt-2 line-clamp-2 italic">"{d.message}"</p>}
+                            {d.message && <p className="text-xs text-muted-foreground mt-2 line-clamp-2 italic">“{d.message}”</p>}
                           </div>
                         </div>
-                        <div className="shrink-0 text-right space-y-2">
-                          <p className="text-xs text-muted-foreground">{new Date(d.createdAt).toLocaleDateString()}</p>
-                          <div className="flex gap-2 justify-end">
-                            <a href={`mailto:${d.email}`} className="flex items-center gap-1 px-2.5 py-1 bg-secondary rounded-md text-xs hover:bg-secondary/80 transition-colors">
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pl-14 sm:pl-0">
+                          <p className="text-xs text-muted-foreground whitespace-nowrap">{shortDate(d.createdAt)}</p>
+                          <div className="flex gap-2">
+                            <a href={`mailto:${d.email}`} title={d.email} className="flex items-center gap-1 px-2.5 py-1 bg-secondary rounded-md text-xs hover:bg-secondary/80 transition-colors">
                               <Mail className="w-3 h-3" /> Email
                             </a>
-                            <a href={`tel:${d.phone}`} className="flex items-center gap-1 px-2.5 py-1 bg-primary/15 text-primary rounded-md text-xs hover:bg-primary/25 transition-colors">
-                              <Phone className="w-3 h-3" /> Call
-                            </a>
+                            {d.phone && (
+                              <a href={`tel:${d.phone}`} title={d.phone} className="flex items-center gap-1 px-2.5 py-1 bg-primary/15 text-primary rounded-md text-xs hover:bg-primary/25 transition-colors">
+                                <Phone className="w-3 h-3" /> Call
+                              </a>
+                            )}
                           </div>
                         </div>
                       </div>
                     </div>
                   );
                 })}
-                {(demoRequests ?? []).length === 0 && <div className="glass rounded-2xl p-16 text-center text-muted-foreground">No demo requests yet.</div>}
+                <ListState loading={demoRequestsQ.isLoading} error={demoRequestsQ.isError} onRetry={() => demoRequestsQ.refetch()}
+                  empty={(demoRequests ?? []).length === 0} icon={BookOpen} emptyTitle="No demo requests yet." emptyHint="Requests from the website's demo form will appear here." />
               </div>
             </div>
           )}
@@ -870,41 +1079,49 @@ export default function AdminDashboard() {
       </main>
 
       {/* ── Client Detail Panel ──────────────────────────────────────────── */}
-      {selectedClientId && selectedClient && (
+      {selectedClientId !== null && selectedClient && (
         <>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }} className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40" onClick={() => setSelectedClientId(null)} />
-          <motion.aside initial={{ x: 480, opacity: 0.6 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="fixed inset-y-0 right-0 w-full sm:w-[480px] glass-sidebar bg-[hsl(222_47%_6%/0.82)] border-l border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden">
+          <motion.aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedClient.businessName} details`}
+            initial={{ x: 480, opacity: 0.6 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-y-0 right-0 w-full sm:w-[480px] glass-sidebar bg-[hsl(222_47%_6%/0.82)] border-l border-white/[0.08] shadow-2xl z-50 flex flex-col overflow-hidden"
+          >
             {/* Panel header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-white/[0.06] shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${industryStyle(selectedClient.industry).bg} ${industryStyle(selectedClient.industry).text}`}>
                   {initials(selectedClient.userName ?? selectedClient.businessName)}
                 </div>
-                <div>
-                  <p className="font-bold text-sm">{selectedClient.userName}</p>
-                  <p className="text-xs text-muted-foreground">{selectedClient.businessName}</p>
+                <div className="min-w-0">
+                  <p className="font-bold text-sm truncate">{selectedClient.userName ?? selectedClient.businessName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{selectedClient.businessName}</p>
                 </div>
               </div>
-              <button onClick={() => setSelectedClientId(null)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+              <button onClick={() => setSelectedClientId(null)} aria-label="Close client details" className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
               {/* Contact info */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Contact Details</h3>
+              <section>
+                <h3 className={SECTION_LABEL}>Contact Details</h3>
                 <div className="bg-secondary/30 rounded-xl p-4 space-y-2.5">
-                  <div className="flex items-center gap-2.5 text-sm">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${industryStyle(selectedClient.industry).bg} ${industryStyle(selectedClient.industry).text}`}>{selectedClient.industry}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
+                  {selectedClient.industry && (
+                    <span className={`${PILL} ${industryStyle(selectedClient.industry).bg} ${industryStyle(selectedClient.industry).text}`}>{selectedClient.industry}</span>
+                  )}
+                  <div className="flex items-center gap-2 text-sm min-w-0">
                     <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <a href={`mailto:${selectedClient.email}`} className="text-primary hover:underline">{selectedClient.email}</a>
+                    <a href={`mailto:${selectedClient.email}`} className="text-primary hover:underline truncate">{selectedClient.email}</a>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <a href={`tel:${selectedClient.phone}`} className="hover:text-primary">{selectedClient.phone}</a>
+                    {selectedClient.phone
+                      ? <a href={`tel:${selectedClient.phone}`} className="hover:text-primary">{selectedClient.phone}</a>
+                      : <span className="text-muted-foreground">No phone on file</span>}
                   </div>
                   {selectedClient.notes && (
                     <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground">
@@ -913,33 +1130,35 @@ export default function AdminDashboard() {
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
 
               {/* Portal login */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Portal Access</h3>
-                <div className="bg-secondary/30 rounded-xl p-4 text-xs space-y-1">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Login email</span><span className="font-mono">{selectedClient.userEmail}</span></div>
+              <section>
+                <h3 className={SECTION_LABEL}>Portal Access</h3>
+                <div className="bg-secondary/30 rounded-xl p-4 text-xs">
+                  <div className="flex justify-between gap-3"><span className="text-muted-foreground shrink-0">Login email</span><span className="font-mono truncate">{selectedClient.userEmail}</span></div>
                 </div>
-              </div>
+              </section>
 
               {/* Projects */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Projects ({clientProjects.length})</h3>
+              <section>
+                <h3 className={SECTION_LABEL}>Projects ({clientProjects.length})</h3>
                 {clientProjects.length > 0 ? (
                   <div className="space-y-3">
                     {clientProjects.map((p) => (
                       <div key={p.id} className="bg-secondary/30 rounded-xl p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold text-sm">{p.projectName}</p>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${PROJECT_STATUS_STYLES[p.status]}`}>{PROJECT_STATUS_LABELS[p.status]}</span>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <p className="font-semibold text-sm min-w-0 break-words">{p.projectName}</p>
+                          <span className={`${PILL} ${PROJECT_STATUS_STYLES[p.status] ?? NEUTRAL_PILL}`}>{PROJECT_STATUS_LABELS[p.status] ?? titleCase(p.status)}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{p.description}</p>
-                        {p.latestUpdate && <p className="text-xs text-muted-foreground italic border-t border-border/30 pt-2">"{p.latestUpdate}"</p>}
-                        <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                          {p.startDate && <span>Start: {new Date(p.startDate).toLocaleDateString()}</span>}
-                          {p.expectedCompletionDate && <span>Due: {new Date(p.expectedCompletionDate).toLocaleDateString()}</span>}
-                        </div>
+                        {p.latestUpdate && <p className="text-xs text-muted-foreground italic border-t border-border/30 pt-2">“{p.latestUpdate}”</p>}
+                        {(p.startDate || p.expectedCompletionDate) && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                            {p.startDate && <span>Started {shortDate(p.startDate)}</span>}
+                            {p.expectedCompletionDate && <span>Due {shortDate(p.expectedCompletionDate)}</span>}
+                          </div>
+                        )}
                         {p.employees && p.employees.length > 0 && (
                           <div className="flex items-center gap-1.5 mt-2">
                             <div className="flex -space-x-1">
@@ -955,42 +1174,42 @@ export default function AdminDashboard() {
                       </div>
                     ))}
                   </div>
-                ) : <p className="text-xs text-muted-foreground">No projects yet.</p>}
-              </div>
+                ) : <p className="text-xs text-muted-foreground">No projects for this client yet.</p>}
+              </section>
 
               {/* Invoices */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Invoices ({clientInvoices.length})</h3>
+              <section>
+                <h3 className={SECTION_LABEL}>Invoices ({clientInvoices.length})</h3>
                 {clientInvoices.length > 0 ? (
                   <div className="space-y-3">
                     {clientInvoices.map((inv) => {
                       const total = parseFloat(String(inv.totalAmount));
                       const paid = parseFloat(String(inv.paidAmount));
-                      const pct = total > 0 ? (paid / total) * 100 : 0;
+                      const pct = total > 0 ? Math.min(100, (paid / total) * 100) : 0;
                       return (
                         <div key={inv.id} className="bg-secondary/30 rounded-xl p-4">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-mono text-muted-foreground">#{inv.id}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${INVOICE_STATUS_STYLES[inv.status]}`}>{inv.status}</span>
+                            <span className={`${PILL} ${INVOICE_STATUS_STYLES[inv.status] ?? NEUTRAL_PILL}`}>{titleCase(inv.status)}</span>
                           </div>
-                          <div className="flex justify-between text-sm font-semibold mb-2">
-                            <span>Total: ${total.toLocaleString()}</span>
-                            <span className="text-emerald-400">Paid: ${paid.toLocaleString()}</span>
+                          <div className="flex flex-wrap justify-between gap-x-3 text-sm font-semibold mb-2 tabular-nums">
+                            <span>Total {money(total)}</span>
+                            <span className="text-emerald-400">Paid {money(paid)}</span>
                           </div>
-                          <div className="h-1.5 bg-border rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-border rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
                             <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
-                          {inv.dueDate && <p className="text-xs text-muted-foreground mt-2">Due: {new Date(inv.dueDate).toLocaleDateString()}</p>}
+                          {inv.dueDate && <p className="text-xs text-muted-foreground mt-2">Due {shortDate(inv.dueDate)}</p>}
                         </div>
                       );
                     })}
                   </div>
-                ) : <p className="text-xs text-muted-foreground">No invoices yet.</p>}
-              </div>
+                ) : <p className="text-xs text-muted-foreground">No invoices for this client yet.</p>}
+              </section>
 
               {/* Feature Requests */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Feature Requests ({clientRequests.length})</h3>
+              <section>
+                <h3 className={SECTION_LABEL}>Feature Requests ({clientRequests.length})</h3>
                 {clientRequests.length > 0 ? (
                   <div className="space-y-2">
                     {clientRequests.map((req) => (
@@ -999,20 +1218,20 @@ export default function AdminDashboard() {
                           <p className="text-xs font-semibold truncate">{req.title}</p>
                           {req.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{req.description}</p>}
                         </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${req.priority === "high" ? "bg-red-500/15 text-red-400" : req.priority === "medium" ? "bg-amber-500/15 text-amber-400" : "bg-secondary text-muted-foreground"}`}>{req.priority}</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${FR_STATUS_STYLES[req.status]}`}>{frLabel(req.status)}</span>
+                        <div className="flex flex-wrap justify-end gap-1.5 shrink-0">
+                          <span className={`${PILL} ${PRIORITY_STYLES[req.priority] ?? NEUTRAL_PILL}`}>{titleCase(req.priority)}</span>
+                          <span className={`${PILL} ${FR_STATUS_STYLES[req.status] ?? NEUTRAL_PILL}`}>{frLabel(req.status)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : <p className="text-xs text-muted-foreground">No requests yet.</p>}
-              </div>
+                ) : <p className="text-xs text-muted-foreground">No requests from this client yet.</p>}
+              </section>
             </div>
 
             <div className="px-6 py-4 border-t border-border/50 shrink-0">
               <a href={`mailto:${selectedClient.email}`} className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
-                <Mail className="w-4 h-4" /> Email {selectedClient.userName?.split(" ")[0]}
+                <Mail className="w-4 h-4" /> Email {selectedClient.userName?.split(" ")[0] ?? selectedClient.businessName}
               </a>
             </div>
           </motion.aside>
