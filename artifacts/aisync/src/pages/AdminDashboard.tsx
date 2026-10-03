@@ -104,11 +104,17 @@ function plural(n: number, word: string) {
 
 function money(value: number | string) {
   const n = typeof value === "number" ? value : parseFloat(String(value));
-  return `$${(Number.isFinite(n) ? n : 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  const v = Number.isFinite(n) ? n : 0;
+  // Whole dollars stay short ($1,500); anything with cents shows both digits ($2,800.50)
+  const cents = Number.isInteger(v) ? 0 : 2;
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: cents, maximumFractionDigits: cents })}`;
 }
 
 function shortDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  // Plain "YYYY-MM-DD" dates are calendar days; parsing them as UTC shows the previous day in US time zones
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const d = ymd ? new Date(+ymd[1], +ymd[2] - 1, +ymd[3]) : new Date(value);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 // Prefer the API's own message ("Email already in use") over the HTTP status prefix
@@ -165,8 +171,8 @@ function ListState({ loading, error, onRetry, empty, icon: Icon, emptyTitle, emp
   if (error) {
     return (
       <div className={wrap}>
-        <AlertCircle className="w-8 h-8 text-destructive/70 mx-auto mb-3" />
-        <p className="text-sm font-medium text-destructive">Couldn't load this data.</p>
+        <AlertCircle className="w-8 h-8 text-red-400/80 mx-auto mb-3" />
+        <p className="text-sm font-medium text-red-400">Couldn't load this data.</p>
         <button onClick={onRetry} className="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
           <RefreshCw className="w-3.5 h-3.5" /> Try again
         </button>
@@ -500,7 +506,7 @@ export default function AdminDashboard() {
                   { label: "Active Projects",     value: summary?.activeProjects ?? 0,         icon: FolderKanban,  color: "text-primary",      accent: "bg-primary/10",        go: "projects" as Tab },
                   { label: "Completed Projects",  value: summary?.completedProjects ?? 0,      icon: CheckCircle2,  color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "projects" as Tab },
                   { label: "Revenue Collected",   value: money(summary?.totalPaid ?? 0),       icon: TrendingUp,    color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "invoices" as Tab },
-                  { label: "Outstanding Balance", value: money(summary?.totalDue ?? 0),        icon: AlertCircle,   color: "text-destructive",  accent: "bg-destructive/10",    go: "invoices" as Tab },
+                  { label: "Outstanding Balance", value: money(summary?.totalDue ?? 0),        icon: AlertCircle,   color: "text-red-400",      accent: "bg-destructive/10",    go: "invoices" as Tab },
                   { label: "Pending Requests",    value: summary?.pendingFeatureRequests ?? 0, icon: Lightbulb,     color: "text-amber-400",    accent: "bg-amber-500/10",      go: "feature-requests" as Tab },
                 ].map((m) => {
                   const Icon = m.icon;
@@ -608,7 +614,7 @@ export default function AdminDashboard() {
             <div>
               <PageHeader
                 title="Clients"
-                subtitle={clientsQ.isLoading ? "Loading…" : plural((clients ?? []).length, "client account")}
+                subtitle={clientsQ.isLoading ? "Loading…" : clientsQ.isError ? undefined : plural((clients ?? []).length, "client account")}
                 action={
                   <button onClick={() => setShowClientForm((v) => !v)} className={showClientForm ? SECONDARY_BTN : PRIMARY_BTN}>
                     {showClientForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> Add Client</>}
@@ -706,7 +712,7 @@ export default function AdminDashboard() {
                       {outstanding > 0 && (
                         <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Outstanding</span>
-                          <span className="text-destructive font-semibold tabular-nums">{money(outstanding)}</span>
+                          <span className="text-red-400 font-semibold tabular-nums">{money(outstanding)}</span>
                         </div>
                       )}
                     </div>
@@ -723,7 +729,7 @@ export default function AdminDashboard() {
             <div>
               <PageHeader
                 title="Projects"
-                subtitle={projectsQ.isLoading ? "Loading…" : plural(totalProjects, "project")}
+                subtitle={projectsQ.isLoading ? "Loading…" : projectsQ.isError ? undefined : plural(totalProjects, "project")}
                 action={
                   <button onClick={() => setShowProjectForm((v) => !v)} className={showProjectForm ? SECONDARY_BTN : PRIMARY_BTN}>
                     {showProjectForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> New Project</>}
@@ -864,7 +870,7 @@ export default function AdminDashboard() {
             <div>
               <PageHeader
                 title="Team"
-                subtitle={employeesQ.isLoading ? "Loading…" : plural((employees ?? []).length, "team member")}
+                subtitle={employeesQ.isLoading ? "Loading…" : employeesQ.isError ? undefined : plural((employees ?? []).length, "team member")}
                 action={
                   <button onClick={() => setShowEmpForm((v) => !v)} className={showEmpForm ? SECONDARY_BTN : PRIMARY_BTN}>
                     {showEmpForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> Add Member</>}
@@ -939,7 +945,7 @@ export default function AdminDashboard() {
                   {[
                     { label: "Total Billed", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.totalAmount)), 0), color: "text-foreground" },
                     { label: "Collected", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0), color: "text-emerald-400" },
-                    { label: "Outstanding", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0), color: "text-destructive" },
+                    { label: "Outstanding", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0), color: "text-red-400" },
                   ].map((s) => (
                     <div key={s.label} className="glass glass-hover rounded-2xl p-5">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">{s.label}</p>
@@ -968,7 +974,7 @@ export default function AdminDashboard() {
                             <td className="px-5 py-3.5 font-medium">{inv.clientBusinessName ?? `Client #${inv.clientId}`}</td>
                             <td className="px-5 py-3.5 font-semibold text-right tabular-nums">{money(inv.totalAmount)}</td>
                             <td className="px-5 py-3.5 text-emerald-400 font-medium text-right tabular-nums">{money(inv.paidAmount)}</td>
-                            <td className={`px-5 py-3.5 font-medium text-right tabular-nums ${due > 0 ? "text-destructive" : "text-muted-foreground"}`}>{money(due)}</td>
+                            <td className={`px-5 py-3.5 font-medium text-right tabular-nums ${due > 0 ? "text-red-400" : "text-muted-foreground"}`}>{money(due)}</td>
                             <td className="px-5 py-3.5">
                               <span className={`${PILL} ${INVOICE_STATUS_STYLES[inv.status] ?? NEUTRAL_PILL}`}>{titleCase(inv.status)}</span>
                             </td>
@@ -991,7 +997,7 @@ export default function AdminDashboard() {
             <div>
               <PageHeader
                 title="Feature Requests"
-                subtitle={featureRequestsQ.isLoading ? "Loading…" : `${pendingRequests.length} waiting for review · ${plural((featureRequests ?? []).length, "request")} total`}
+                subtitle={featureRequestsQ.isLoading ? "Loading…" : featureRequestsQ.isError ? undefined : `${pendingRequests.length} waiting for review · ${plural((featureRequests ?? []).length, "request")} total`}
               />
               <div className="space-y-3">
                 {(featureRequests ?? []).map((req) => {
@@ -1030,7 +1036,7 @@ export default function AdminDashboard() {
             <div>
               <PageHeader
                 title="Demo Leads"
-                subtitle={demoRequestsQ.isLoading ? "Loading…" : `${(demoRequests ?? []).length} ${(demoRequests ?? []).length === 1 ? "business has" : "businesses have"} requested a demo`}
+                subtitle={demoRequestsQ.isLoading ? "Loading…" : demoRequestsQ.isError ? undefined : `${(demoRequests ?? []).length} ${(demoRequests ?? []).length === 1 ? "business has" : "businesses have"} requested a demo`}
               />
               <div className="space-y-4">
                 {(demoRequests ?? []).map((d) => {
