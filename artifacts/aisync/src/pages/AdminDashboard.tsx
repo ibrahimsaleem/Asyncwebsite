@@ -4,6 +4,7 @@ import AmbientBackground from "@/components/AmbientBackground";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { MilestoneChecklist, ProjectTimeline, QuestionsPanel } from "@/components/ProjectTracking";
+import { AdminLoginControl, ProjectTeamPicker } from "@/components/AdminTeamTools";
 
 import {
   useGetAdminSummary, useListClients, useListProjects, useListEmployees,
@@ -793,7 +794,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="shrink-0 flex flex-wrap justify-end gap-2">
                           <button onClick={() => setTrackingProjectId(trackingProjectId === p.id ? null : p.id)} className="px-3 py-1.5 border border-border rounded-lg text-xs font-semibold hover:bg-secondary transition-colors">
-                            {trackingProjectId === p.id ? "Hide checklist & questions" : "Checklist & questions"}
+                            {trackingProjectId === p.id ? "Hide team, checklist & questions" : "Team, checklist & questions"}
                           </button>
                           {!isEditing && (
                             <button onClick={() => startEditProject(p)} className="px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-semibold hover:bg-primary/25 transition-colors">
@@ -869,6 +870,7 @@ export default function AdminDashboard() {
                             <MilestoneChecklist projectId={p.id} isAdmin />
                             <ProjectTimeline projectId={p.id} />
                           </div>
+                          <ProjectTeamPicker projectId={p.id} assigned={(p.employees ?? []).map((e) => e.id)} members={employees ?? []} />
                           <QuestionsPanel projectId={p.id} isAdmin />
                         </div>
                       )}
@@ -933,6 +935,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground mt-1">
                           {projectCount > 0 ? `Assigned to ${plural(projectCount, "project")}` : "Not assigned to a project"}
                         </p>
+                        <AdminLoginControl member={emp} />
                       </div>
                       <button
                         onClick={() => handleDeleteEmployee(emp.id, emp.name)}
