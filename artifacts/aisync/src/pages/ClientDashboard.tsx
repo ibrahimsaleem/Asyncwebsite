@@ -272,7 +272,7 @@ export default function ClientDashboard() {
                   },
                   {
                     label: "Balance Due",
-                    value: invoicesLoading ? "…" : (totalDue > 0 ? `$${totalDue.toLocaleString()}` : "Paid up"),
+                    value: invoicesLoading ? "…" : (totalDue > 0 ? `$${totalDue.toLocaleString()}` : (invoices ?? []).length === 0 ? "Nothing due" : "Paid up"),
                     icon: totalDue > 0 ? AlertCircle : CheckCircle2,
                     color: totalDue > 0 ? "text-destructive" : "text-emerald-400",
                     accent: totalDue > 0 ? "bg-destructive/10" : "bg-emerald-500/10",
