@@ -39,7 +39,7 @@ const QUESTIONS: [string, string[]][] = [
     "Best time to make outbound calls? Pick all that apply. | 10am–1pm | 1pm–5pm | 5pm–8pm",
   ]],
   ["D. Languages and voice", [
-    "Besides Hindi and English, which 4 regional languages do you need? | Tamil | Telugu | Kannada | Malayalam | Marathi | Bengali | Gujarati | Punjabi | Odia | Assamese | Urdu",
+    "Besides Hindi and English, which regional languages do you need? Pick 4. | Tamil | Telugu | Kannada | Malayalam | Marathi | Bengali | Gujarati | Punjabi | Odia | Assamese | Urdu",
     "How should the assistant choose the language? | Detect the caller's language automatically | Ask the caller at the start | Use the clinic's regional language",
     "Which language should it start the call in? | Hindi | English | The clinic's regional language",
     "Which voice do you prefer? | Female | Male | No preference",
