@@ -227,7 +227,9 @@ export const UpdateClientBody = zod.object({
   "businessName": zod.string().optional(),
   "industry": zod.string().optional(),
   "phone": zod.string().optional(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "email": zod.string().optional().describe('Contact and login email'),
+  "contactName": zod.string().optional()
 })
 
 export const UpdateClientResponse = zod.object({

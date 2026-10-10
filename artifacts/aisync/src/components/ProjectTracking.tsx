@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, MotionConfig } from "framer-motion";
+import { getListProjectsQueryKey } from "@workspace/api-client-react";
 import { Check, CheckCircle2, ChevronDown, Circle, Pencil, Trash2 } from "lucide-react";
 
 // Timeline, milestone checklist and onboarding questions for one project.
@@ -161,9 +162,20 @@ export function MilestoneChecklist({ projectId, isAdmin }: { projectId: number; 
   );
 }
 
-export function ProjectTimeline({ projectId }: { projectId: number }) {
+export function ProjectTimeline({ projectId, isAdmin }: { projectId: number; isAdmin?: boolean }) {
+  const qc = useQueryClient();
   const { data } = useProjectTracking(projectId);
   const updates = data?.updates ?? [];
+  const [editing, setEditing] = useState<{ id: number; message: string } | null>(null);
+  const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: trackingKey(projectId) }), qc.invalidateQueries({ queryKey: getListProjectsQueryKey() })]);
+  const save = useMutation({
+    mutationFn: (u: { id: number; message: string }) => api(`/api/projects/${projectId}/updates/${u.id}`, { method: "PATCH", body: JSON.stringify({ message: u.message }) }),
+    onSuccess: () => { refresh(); setEditing(null); },
+  });
+  const remove = useMutation({
+    mutationFn: (id: number) => api(`/api/projects/${projectId}/updates/${id}`, { method: "DELETE" }),
+    onSuccess: refresh,
+  });
   return (
     <div className="glass glass-hover rounded-2xl p-6">
       <h3 className="font-semibold mb-4">Updates from your team</h3>
@@ -174,8 +186,26 @@ export function ProjectTimeline({ projectId }: { projectId: number }) {
           {updates.map((u) => (
             <li key={u.id} className="pl-5 relative">
               <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-primary" />
-              <p className="text-xs text-muted-foreground mb-0.5">{when(u.createdAt)}</p>
-              <p className="text-sm text-foreground/90 whitespace-pre-line">{u.message}</p>
+              <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-2">{when(u.createdAt)}
+                {isAdmin && editing?.id !== u.id && (
+                  <>
+                    <button type="button" onClick={() => setEditing({ id: u.id, message: u.message })} className="text-primary hover:underline">Edit</button>
+                    <button type="button" onClick={() => remove.mutate(u.id)} className="hover:text-destructive">Delete</button>
+                  </>
+                )}
+              </p>
+              {isAdmin && editing?.id === u.id ? (
+                <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); if (editing.message.trim()) save.mutate(editing); }}>
+                  <textarea rows={4} value={editing.message} onChange={(e) => setEditing({ ...editing, message: e.target.value })} aria-label="Update text"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-y" />
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={save.isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold disabled:opacity-50">Save</button>
+                    <button type="button" onClick={() => setEditing(null)} className="px-3 py-1.5 border border-border rounded-lg text-xs">Cancel</button>
+                  </div>
+                </form>
+              ) : (
+                <p className="text-sm text-foreground/90 whitespace-pre-line">{u.message}</p>
+              )}
             </li>
           ))}
         </ol>
@@ -269,6 +299,12 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
   const remove = useMutation({
     mutationFn: (id: number) => api(`/api/projects/${projectId}/questions/${id}`, { method: "DELETE" }),
     onSuccess: refresh,
+  });
+  const [editingQ, setEditingQ] = useState<{ id: number; section: string; question: string; options: string } | null>(null);
+  const saveQuestion = useMutation({
+    mutationFn: (q: { id: number; section: string; question: string; options: string }) =>
+      api(`/api/projects/${projectId}/questions/${q.id}`, { method: "PATCH", body: JSON.stringify({ section: q.section, question: q.question, options: q.options }) }),
+    onSuccess: () => { refresh(); setEditingQ(null); },
   });
 
   const hasAnswer = (q: Question) => (draft[q.id] ?? q.answer ?? "").trim().length > 0;
@@ -366,10 +402,27 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                       </span>
                       <label htmlFor={`q-${q.id}`} className="text-sm font-medium leading-snug flex-1">{q.question}</label>
                       {isAdmin && (
-                        <button type="button" onClick={() => remove.mutate(q.id)} aria-label="Delete question"
-                          className="p-1 -m-1 text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <>
+                          <button type="button" onClick={() => setEditingQ({ id: q.id, section: q.section, question: q.question, options: (q.options ?? []).join(" | ") })} aria-label="Edit question"
+                            className="p-1 -m-1 text-muted-foreground hover:text-foreground shrink-0"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button type="button" onClick={() => remove.mutate(q.id)} aria-label="Delete question"
+                            className="p-1 -m-1 text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </>
                       )}
                     </div>
+                    {isAdmin && editingQ?.id === q.id && (
+                      <form className="mb-3 sm:pl-9 space-y-2" onSubmit={(e) => { e.preventDefault(); if (editingQ.question.trim()) saveQuestion.mutate(editingQ); }}>
+                        <input value={editingQ.question} onChange={(e) => setEditingQ({ ...editingQ, question: e.target.value })} aria-label="Question" className={input} />
+                        <div className="grid sm:grid-cols-[12rem_1fr] gap-2">
+                          <input value={editingQ.section} onChange={(e) => setEditingQ({ ...editingQ, section: e.target.value })} aria-label="Section" placeholder="Section" className={input} />
+                          <input value={editingQ.options} onChange={(e) => setEditingQ({ ...editingQ, options: e.target.value })} aria-label="Answer options" placeholder="Options, separated by |  (leave empty for a text answer)" className={input} />
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="submit" disabled={saveQuestion.isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold disabled:opacity-50">Save question</button>
+                          <button type="button" onClick={() => setEditingQ(null)} className="px-3 py-1.5 border border-border rounded-lg text-xs">Cancel</button>
+                        </div>
+                      </form>
+                    )}
                     {q.options && q.options.length > 0 && (
                       <div role="group" aria-label={isMulti(q) ? "Choose one or more" : "Choose one"} className="flex flex-wrap gap-2 mb-3 sm:pl-9">
                         {q.options.map((opt) => {

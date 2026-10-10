@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useUrlTab } from "@/hooks/use-url-tab";
 import { DualTotal, FxNote, Money } from "@/components/Money";
 import { ChangePassword } from "@/components/AccountTools";
+import { ChatThread, useMessageNotifications } from "@/components/Chat";
 import { useAuth } from "@/context/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
 import { motion } from "framer-motion";
@@ -31,7 +32,7 @@ import {
   Building2, Phone, Mail, Menu, ListChecks,
 } from "lucide-react";
 
-const TABS = ["overview", "project", "questions", "team", "invoices", "files", "requests"] as const;
+const TABS = ["overview", "project", "questions", "messages", "team", "invoices", "files", "requests"] as const;
 type Tab = (typeof TABS)[number];
 
 const STAGES: { label: string; key: string }[] = [
@@ -112,6 +113,7 @@ export default function ClientDashboard() {
   const project = projects?.[0];
   const { data: tracking } = useProjectTracking(project?.id);
   const unanswered = (tracking?.questions ?? []).filter((q) => !q.answer).length;
+  const unreadMessages = useMessageNotifications({ onOpen: () => setTab("messages"), viewing: tab === "messages" });
   const si = stageIndex(project?.status ?? "onboarding");
 
   const totalDue = (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0);
@@ -158,6 +160,7 @@ export default function ClientDashboard() {
     { id: "overview",  label: "Overview",  icon: LayoutDashboard },
     { id: "project",   label: "Project",   icon: FolderKanban },
     { id: "questions", label: "Questions", icon: ListChecks },
+    { id: "messages",  label: "Messages",  icon: MessageSquare },
     { id: "team",      label: "Team",      icon: Users },
     { id: "invoices",  label: "Invoices",  icon: Receipt },
     { id: "files",     label: "Files",     icon: FileText },
@@ -192,8 +195,9 @@ export default function ClientDashboard() {
 
       {/* ── Mobile top bar ─────────────────────────────────────────────── */}
       <header className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 glass-sidebar border-b border-white/[0.06]">
-        <button onClick={() => setNavOpen(true)} aria-label="Open menu" className="p-2 -ml-2 rounded-lg text-foreground/90 active:bg-secondary/60">
+        <button onClick={() => setNavOpen(true)} aria-label={unreadMessages > 0 ? `Open menu, ${unreadMessages} unread messages` : "Open menu"} className="relative p-2 -ml-2 rounded-lg text-foreground/90 active:bg-secondary/60">
           <Menu className="w-5 h-5" />
+          {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background" aria-hidden />}
         </button>
         <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shrink-0">
           <TrendingUp className="w-3 h-3 text-white" />
@@ -240,6 +244,9 @@ export default function ClientDashboard() {
                 {item.label}
                 {item.id === "requests" && openRequests > 0 && (
                   <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{openRequests}</span>
+                )}
+                {item.id === "messages" && unreadMessages > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full" title={`${unreadMessages} unread`}>{unreadMessages}</span>
                 )}
                 {item.id === "questions" && unanswered > 0 && (
                   <span className="ml-auto bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full" title={`${unanswered} unanswered`}>{unanswered}</span>
@@ -493,11 +500,21 @@ export default function ClientDashboard() {
             </div>
           )}
 
+          {tab === "messages" && (
+            <div>
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold">Messages</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">Chat with your aicronics team. Everyone working on your project sees your messages and can reply.</p>
+              </div>
+              <ChatThread title="Your aicronics team" subtitle={(project?.employees ?? []).map((e) => e.name.split(" ")[0]).join(", ") || "We usually reply within a working day"} />
+            </div>
+          )}
+
           {tab === "team" && (
             <div>
               <div className="mb-6">
                 <h1 className="text-2xl font-bold">Your Team</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">The people working on your voice assistant. Reach any of us directly.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">The people working on your voice assistant. Reach any of us directly, or <button type="button" onClick={() => setTab("messages")} className="text-primary font-medium hover:underline">message the whole team</button>.</p>
               </div>
               {project?.employees && project.employees.length > 0 ? (
                 <div className="glass glass-hover rounded-2xl p-6">

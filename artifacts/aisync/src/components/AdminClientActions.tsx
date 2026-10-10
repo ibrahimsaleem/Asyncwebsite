@@ -6,7 +6,7 @@ import {
   getListFilesQueryKey, getListInvoicesQueryKey, getListProjectsQueryKey, useUpdateClient,
 } from "@workspace/api-client-react";
 
-type Client = { id: number; businessName: string; industry: string; phone: string; notes?: string | null; isDemo?: boolean };
+type Client = { id: number; businessName: string; industry: string; phone: string; email: string; userName?: string; notes?: string | null; isDemo?: boolean };
 const FIELD = "w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50";
 
 function useRefreshAll() {
@@ -22,7 +22,7 @@ export function ClientDetailsActions({ client, onDeleted }: { client: Client; on
   const update = useUpdateClient();
   const refreshAll = useRefreshAll();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ businessName: client.businessName, industry: client.industry, phone: client.phone, notes: client.notes ?? "" });
+  const [form, setForm] = useState({ contactName: client.userName ?? "", email: client.email, businessName: client.businessName, industry: client.industry, phone: client.phone, notes: client.notes ?? "" });
   const [confirmText, setConfirmText] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
@@ -51,12 +51,15 @@ export function ClientDetailsActions({ client, onDeleted }: { client: Client; on
   if (editing) {
     return (
       <form onSubmit={save} className="space-y-2.5 bg-secondary/30 rounded-xl p-4">
-        {([["businessName", "Business name"], ["industry", "Industry"], ["phone", "Phone"]] as const).map(([k, label]) => (
+        {([["contactName", "Contact person"], ["email", "Email (also their portal login)"], ["businessName", "Business name"], ["industry", "Industry"], ["phone", "Phone"]] as const).map(([k, label]) => (
           <label key={k} className="block">
             <span className="block text-[11px] text-muted-foreground mb-1">{label}</span>
-            <input required={k !== "phone"} value={form[k]} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} className={FIELD} />
+            <input required={k !== "phone"} type={k === "email" ? "email" : "text"} value={form[k]} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} className={FIELD} />
           </label>
         ))}
+        {form.email.trim().toLowerCase() !== client.email.toLowerCase() && (
+          <p className="text-[11px] text-amber-300">They will log in with the new email from now on. Let them know.</p>
+        )}
         <label className="block">
           <span className="block text-[11px] text-muted-foreground mb-1">Notes (only your team sees these)</span>
           <textarea rows={4} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} className={`${FIELD} resize-y`} />

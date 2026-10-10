@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcrypt";
-import { db, projectsTable, projectAssignmentsTable, projectUpdatesTable, projectMilestonesTable, projectQuestionsTable, invoicesTable, uploadedFilesTable, featureRequestsTable, demoRequestsTable, usersTable, clientsTable } from "@workspace/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { db, projectsTable, projectAssignmentsTable, projectUpdatesTable, projectMilestonesTable, projectQuestionsTable, invoicesTable, uploadedFilesTable, featureRequestsTable, demoRequestsTable, messagesTable, messageReadsTable, usersTable, clientsTable } from "@workspace/db";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   CreateClientBody,
   GetClientParams,
@@ -131,16 +131,34 @@ router.patch("/clients/:id", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
 
-  const [client] = await db
-    .update(clientsTable)
-    .set(parsed.data)
-    .where(eq(clientsTable.id, params.data.id))
-    .returning();
-
-  if (!client) {
+  const { email: rawEmail, contactName, ...clientFields } = parsed.data;
+  const [current] = await db.select().from(clientsTable).where(eq(clientsTable.id, params.data.id));
+  if (!current) {
     res.status(404).json({ error: "Client not found" });
     return;
   }
+
+  // The email is also their portal login, so it must stay unique across all logins
+  const email = rawEmail?.trim().toLowerCase();
+  if (email && email !== current.email.toLowerCase()) {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      res.status(400).json({ error: "That email doesn't look right" });
+      return;
+    }
+    const [taken] = await db.select().from(usersTable).where(sql`lower(${usersTable.email}) = ${email}`);
+    if (taken && taken.id !== current.userId) {
+      res.status(409).json({ error: "Another account already uses that email" });
+      return;
+    }
+  }
+
+  const client = await db.transaction(async (tx) => {
+    const [c] = await tx.update(clientsTable).set({ ...clientFields, ...(email ? { email } : {}) })
+      .where(eq(clientsTable.id, params.data.id)).returning();
+    const userSet = { ...(email ? { email } : {}), ...(contactName?.trim() ? { name: contactName.trim() } : {}) };
+    if (Object.keys(userSet).length) await tx.update(usersTable).set(userSet).where(eq(usersTable.id, c.userId));
+    return c;
+  });
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, client.userId));
   res.json(UpdateClientResponse.parse(formatClient(client, user)));
@@ -179,6 +197,8 @@ async function deleteClientCascade(clientId: number) {
     await tx.delete(invoicesTable).where(eq(invoicesTable.clientId, clientId));
     await tx.delete(uploadedFilesTable).where(eq(uploadedFilesTable.clientId, clientId));
     await tx.delete(featureRequestsTable).where(eq(featureRequestsTable.clientId, clientId));
+    await tx.delete(messagesTable).where(eq(messagesTable.clientId, clientId));
+    await tx.delete(messageReadsTable).where(eq(messageReadsTable.clientId, clientId));
     await tx.delete(clientsTable).where(eq(clientsTable.id, clientId));
     await tx.delete(usersTable).where(and(eq(usersTable.id, client.userId), eq(usersTable.role, "client")));
   });

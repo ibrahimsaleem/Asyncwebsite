@@ -11,6 +11,7 @@ import featureRequestsRouter from "./featureRequests";
 import dashboardRouter from "./dashboard";
 import projectTrackingRouter from "./projectTracking";
 import fxRouter from "./fx";
+import messagesRouter from "./messages";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(featureRequestsRouter);
 router.use(dashboardRouter);
 router.use(projectTrackingRouter);
 router.use(fxRouter);
+router.use(messagesRouter);
 
 export default router;

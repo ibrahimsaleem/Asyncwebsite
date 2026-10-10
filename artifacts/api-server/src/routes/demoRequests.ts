@@ -39,17 +39,32 @@ router.get("/demo-requests", requireAdmin, async (_req, res): Promise<void> => {
 const LEAD_STATUSES = ["new", "contacted", "won", "lost"];
 
 router.patch("/demo-requests/:id", requireAdmin, async (req, res): Promise<void> => {
-  const status = String(req.body?.status ?? "");
-  if (!LEAD_STATUSES.includes(status)) {
-    res.status(400).json({ error: "Status must be new, contacted, won or lost" });
+  const set: Record<string, string> = {};
+  if (req.body?.status !== undefined) {
+    if (!LEAD_STATUSES.includes(String(req.body.status))) {
+      res.status(400).json({ error: "Status must be new, contacted, won or lost" });
+      return;
+    }
+    set.status = String(req.body.status);
+  }
+  for (const k of ["name", "businessName", "email", "phone", "industry", "message"] as const) {
+    if (typeof req.body?.[k] === "string") set[k] = req.body[k].trim();
+  }
+  if (Object.keys(set).length === 0) {
+    res.status(400).json({ error: "Nothing to change" });
     return;
   }
-  const [lead] = await db.update(demoRequestsTable).set({ status }).where(eq(demoRequestsTable.id, Number(req.params.id))).returning();
+  const [lead] = await db.update(demoRequestsTable).set(set).where(eq(demoRequestsTable.id, Number(req.params.id))).returning();
   if (!lead) {
     res.status(404).json({ error: "Lead not found" });
     return;
   }
   res.json({ id: lead.id, status: lead.status });
+});
+
+router.delete("/demo-requests/:id", requireAdmin, async (req, res): Promise<void> => {
+  await db.delete(demoRequestsTable).where(eq(demoRequestsTable.id, Number(req.params.id)));
+  res.json({ success: true });
 });
 
 export default router;

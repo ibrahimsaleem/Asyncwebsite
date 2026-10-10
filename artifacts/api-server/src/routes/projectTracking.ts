@@ -4,6 +4,7 @@ import {
   projectUpdatesTable, projectMilestonesTable, projectQuestionsTable,
 } from "@workspace/db";
 import { and, asc, desc, eq } from "drizzle-orm";
+import { projectsTable as projects } from "@workspace/db";
 import { requireAuth, requireAdmin } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -133,6 +134,61 @@ router.delete("/projects/:id/questions/:questionId", requireAdmin, async (req, r
     eq(projectQuestionsTable.id, parseInt(String(req.params.questionId), 10)),
     eq(projectQuestionsTable.projectId, parseInt(String(req.params.id), 10)),
   ));
+  res.json({ success: true });
+});
+
+// Admin edits a question's wording, section or answer options ("A | B | C" or an array; empty clears them)
+router.patch("/projects/:id/questions/:questionId", requireAdmin, async (req, res): Promise<void> => {
+  const set: { question?: string; section?: string; options?: string[] | null } = {};
+  if (typeof req.body?.question === "string" && req.body.question.trim()) set.question = req.body.question.trim();
+  if (typeof req.body?.section === "string" && req.body.section.trim()) set.section = req.body.section.trim();
+  if (req.body?.options !== undefined) {
+    const raw = Array.isArray(req.body.options) ? req.body.options : String(req.body.options ?? "").split("|");
+    const opts = raw.map((o: unknown) => String(o).trim()).filter(Boolean);
+    set.options = opts.length ? opts : null;
+  }
+  const [q] = await db.update(projectQuestionsTable).set(set).where(and(
+    eq(projectQuestionsTable.id, parseInt(String(req.params.questionId), 10)),
+    eq(projectQuestionsTable.projectId, parseInt(String(req.params.id), 10)),
+  )).returning();
+  if (!q) {
+    res.status(404).json({ error: "Question not found" });
+    return;
+  }
+  res.json(q);
+});
+
+// Keeps the project's "latest update" in line with the newest timeline entry after an edit or delete
+async function syncLatestUpdate(projectId: number) {
+  const [newest] = await db.select().from(projectUpdatesTable).where(eq(projectUpdatesTable.projectId, projectId))
+    .orderBy(desc(projectUpdatesTable.createdAt)).limit(1);
+  await db.update(projects).set({ latestUpdate: newest?.message ?? null }).where(eq(projects.id, projectId));
+}
+
+router.patch("/projects/:id/updates/:updateId", requireAdmin, async (req, res): Promise<void> => {
+  const projectId = parseInt(String(req.params.id), 10);
+  const message = String(req.body?.message ?? "").trim();
+  if (!message) {
+    res.status(400).json({ error: "The update can't be empty" });
+    return;
+  }
+  const [u] = await db.update(projectUpdatesTable).set({ message }).where(and(
+    eq(projectUpdatesTable.id, parseInt(String(req.params.updateId), 10)), eq(projectUpdatesTable.projectId, projectId),
+  )).returning();
+  if (!u) {
+    res.status(404).json({ error: "Update not found" });
+    return;
+  }
+  await syncLatestUpdate(projectId);
+  res.json(u);
+});
+
+router.delete("/projects/:id/updates/:updateId", requireAdmin, async (req, res): Promise<void> => {
+  const projectId = parseInt(String(req.params.id), 10);
+  await db.delete(projectUpdatesTable).where(and(
+    eq(projectUpdatesTable.id, parseInt(String(req.params.updateId), 10)), eq(projectUpdatesTable.projectId, projectId),
+  ));
+  await syncLatestUpdate(projectId);
   res.json({ success: true });
 });
 

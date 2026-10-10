@@ -7,3 +7,4 @@ export * from "./files";
 export * from "./featureRequests";
 export * from "./demoRequests";
 export * from "./projectTracking";
+export * from "./messages";

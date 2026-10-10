@@ -9,7 +9,8 @@ import { AdminLoginControl, EditMemberControl, ProjectTeamPicker } from "@/compo
 import { EditInvoiceForm, NewInvoiceForm, RecordPayment } from "@/components/AdminInvoiceTools";
 import { AdminFilesTab } from "@/components/AdminFiles";
 import { ClientDetailsActions, RemoveDemoData } from "@/components/AdminClientActions";
-import { LeadStatus, RequestReply } from "@/components/AdminRequestReply";
+import { LeadActions, LeadStatus, RequestReply } from "@/components/AdminRequestReply";
+import { AdminInbox, useMessageNotifications } from "@/components/Chat";
 import { ChangePassword, ResetClientPassword } from "@/components/AccountTools";
 import { DualTotal, FxNote, Money } from "@/components/Money";
 
@@ -28,10 +29,10 @@ import {
   LayoutDashboard, Users, FolderKanban, UserCog, Receipt,
   Lightbulb, BookOpen, LogOut, X, Phone, Mail, Building2,
   TrendingUp, CheckCircle2, Clock, AlertCircle, ChevronRight,
-  Plus, Calendar, Menu, RefreshCw, FileText,
+  Plus, Calendar, Menu, RefreshCw, FileText, MessageSquare,
 } from "lucide-react";
 
-const TABS = ["overview", "clients", "projects", "employees", "invoices", "files", "feature-requests", "demo-leads"] as const;
+const TABS = ["overview", "messages", "clients", "projects", "employees", "invoices", "files", "feature-requests", "demo-leads"] as const;
 type Tab = (typeof TABS)[number];
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {
@@ -265,6 +266,8 @@ export default function AdminDashboard() {
   const [trackingProjectId, setTrackingProjectId] = useState<number | null>(null);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
+  const [chatClientId, setChatClientId] = useState<number | null>(null);
+  const unreadMessages = useMessageNotifications({ onOpen: (id) => { setChatClientId(id); setTab("messages"); }, viewing: tab === "messages" });
   const [editStatus, setEditStatus] = useState<string>("onboarding");
   const [editUpdate, setEditUpdate] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -403,6 +406,7 @@ export default function AdminDashboard() {
 
   const navItems: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: "overview",          label: "Overview",         icon: LayoutDashboard },
+    { id: "messages",          label: "Messages",         icon: MessageSquare },
     { id: "clients",           label: "Clients",          icon: Users },
     { id: "projects",          label: "Projects",         icon: FolderKanban },
     { id: "employees",         label: "Team",             icon: UserCog },
@@ -455,8 +459,9 @@ export default function AdminDashboard() {
 
       {/* ── Mobile top bar ─────────────────────────────────────────────── */}
       <header className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 glass-sidebar border-b border-white/[0.06]">
-        <button onClick={() => setNavOpen(true)} aria-label="Open menu" className="p-2 -ml-2 rounded-lg text-foreground/90 active:bg-secondary/60">
+        <button onClick={() => setNavOpen(true)} aria-label={unreadMessages > 0 ? `Open menu, ${unreadMessages} unread messages` : "Open menu"} className="relative p-2 -ml-2 rounded-lg text-foreground/90 active:bg-secondary/60">
           <Menu className="w-5 h-5" />
+          {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-background" aria-hidden />}
         </button>
         <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shrink-0">
           <TrendingUp className="w-3 h-3 text-white" />
@@ -485,6 +490,7 @@ export default function AdminDashboard() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const badge =
+              item.id === "messages" ? { count: unreadMessages, cls: "bg-red-500 text-white", label: "unread messages" } :
               item.id === "demo-leads" ? { count: demoRequests?.length ?? 0, cls: "bg-primary text-primary-foreground", label: "demo leads" } :
               item.id === "feature-requests" ? { count: summary?.pendingFeatureRequests ?? 0, cls: "bg-amber-500 text-white", label: "pending requests" } :
               null;
@@ -936,7 +942,7 @@ export default function AdminDashboard() {
                         <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
                           <div className="grid lg:grid-cols-2 gap-4 items-start">
                             <MilestoneChecklist projectId={p.id} isAdmin />
-                            <ProjectTimeline projectId={p.id} />
+                            <ProjectTimeline projectId={p.id} isAdmin />
                           </div>
                           <ProjectTeamPicker projectId={p.id} assigned={(p.employees ?? []).map((e) => e.id)} members={employees ?? []} />
                           <QuestionsPanel projectId={p.id} isAdmin />
@@ -1116,6 +1122,13 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {tab === "messages" && (
+            <div>
+              <PageHeader title="Messages" subtitle="One chat per client. Everyone on the team sees every chat and can reply." />
+              <AdminInbox openClientId={chatClientId} onOpen={setChatClientId} />
+            </div>
+          )}
+
           {tab === "files" && (
             <div>
               <PageHeader title="Files" subtitle="Documents clients uploaded, and files you shared with them" />
@@ -1189,6 +1202,7 @@ export default function AdminDashboard() {
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">{d.businessName}</p>
                             {d.message && <p className="text-xs text-muted-foreground mt-2 line-clamp-2 italic">“{d.message}”</p>}
+                            <LeadActions lead={d} />
                           </div>
                         </div>
                         <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 pl-14 sm:pl-0">

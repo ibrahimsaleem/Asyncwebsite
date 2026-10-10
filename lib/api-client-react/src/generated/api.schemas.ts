@@ -103,6 +103,9 @@ export interface ClientUpdate {
   phone?: string;
   /** @nullable */
   notes?: string | null;
+  /** Contact and login email */
+  email?: string;
+  contactName?: string;
 }
 
 export interface ClientWithUser {

@@ -768,6 +768,11 @@ components:
           type: string
         notes:
           type: ["string", "null"]
+        email:
+          type: string
+          description: Contact and login email
+        contactName:
+          type: string
 
     ClientWithUser:
       type: object
