@@ -22,7 +22,9 @@ function ProtectedRoute({ component: Component, role }: { component: any, role: 
   }
 
   if (!user || user.role !== role) {
-    return <Redirect to="/login" />;
+    // Remember the tab they were opening (e.g. a /client/questions link) so login brings them back to it
+    const next = encodeURIComponent(window.location.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ""), ""));
+    return <Redirect to={user ? "/login" : `/login?next=${next}`} />;
   }
 
   return <Component />;
@@ -34,8 +36,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
-      <Route path="/client" component={() => <ProtectedRoute role="client" component={ClientDashboard} />} />
-      <Route path="/admin" component={() => <ProtectedRoute role="admin" component={AdminDashboard} />} />
+      <Route path="/client/:tab?" component={() => <ProtectedRoute role="client" component={ClientDashboard} />} />
+      <Route path="/admin/:tab?" component={() => <ProtectedRoute role="admin" component={AdminDashboard} />} />
       <Route path="/buildworkflow" component={BuildWorkflowGuide} />
       <Route path="/buildworkflowgudie" component={BuildWorkflowGuide} />
       <Route path="/buildworkflowguide" component={BuildWorkflowGuide} />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useUrlTab } from "@/hooks/use-url-tab";
 import AmbientBackground from "@/components/AmbientBackground";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -24,7 +25,8 @@ import {
   Plus, Calendar, Menu, RefreshCw,
 } from "lucide-react";
 
-type Tab = "overview" | "clients" | "projects" | "employees" | "invoices" | "feature-requests" | "demo-leads";
+const TABS = ["overview", "clients", "projects", "employees", "invoices", "feature-requests", "demo-leads"] as const;
+type Tab = (typeof TABS)[number];
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {
   onboarding: "Onboarding",
@@ -193,7 +195,7 @@ function ListState({ loading, error, onRetry, empty, icon: Icon, emptyTitle, emp
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useUrlTab<Tab>("/admin", TABS, "overview");
   const [navOpen, setNavOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const qc = useQueryClient();

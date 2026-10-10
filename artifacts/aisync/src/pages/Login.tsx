@@ -14,7 +14,10 @@ export default function Login() {
   // Navigate once the auth context knows the user, so protected routes
   // don't see a stale "logged out" state and bounce back here.
   useEffect(() => {
-    if (user) setLocation(user.role === "admin" ? "/admin" : "/client");
+    if (!user) return;
+    const home = user.role === "admin" ? "/admin" : "/client";
+    const next = new URLSearchParams(window.location.search).get("next") ?? "";
+    setLocation(next === home || next.startsWith(`${home}/`) ? next : home);
   }, [user, setLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {

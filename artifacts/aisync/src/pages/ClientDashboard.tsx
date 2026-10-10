@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useUrlTab } from "@/hooks/use-url-tab";
 import { useAuth } from "@/context/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
 import { motion } from "framer-motion";
@@ -28,7 +29,8 @@ import {
   Building2, Phone, Mail, Menu, ListChecks,
 } from "lucide-react";
 
-type Tab = "overview" | "project" | "questions" | "invoices" | "files" | "requests";
+const TABS = ["overview", "project", "questions", "team", "invoices", "files", "requests"] as const;
+type Tab = (typeof TABS)[number];
 
 const STAGES: { label: string; key: string }[] = [
   { label: "Onboarding",  key: "onboarding" },
@@ -78,7 +80,7 @@ function fileIcon(name: string) {
 
 export default function ClientDashboard() {
   const { user, logout } = useAuth();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useUrlTab<Tab>("/client", TABS, "overview");
   const [navOpen, setNavOpen] = useState(false);
   const [requestTitle, setRequestTitle] = useState("");
   const [requestDesc, setRequestDesc] = useState("");
@@ -140,6 +142,7 @@ export default function ClientDashboard() {
     { id: "overview",  label: "Overview",  icon: LayoutDashboard },
     { id: "project",   label: "Project",   icon: FolderKanban },
     { id: "questions", label: "Questions", icon: ListChecks },
+    { id: "team",      label: "Team",      icon: Users },
     { id: "invoices",  label: "Invoices",  icon: Receipt },
     { id: "files",     label: "Files",     icon: FileText },
     { id: "requests",  label: "Requests",  icon: Lightbulb },
@@ -452,11 +455,35 @@ export default function ClientDashboard() {
                   <MilestoneChecklist projectId={project.id} />
                   <ProjectTimeline projectId={project.id} />
 
-                  {/* Team */}
-                  {project.employees && project.employees.length > 0 && (
-                    <div className="glass glass-hover rounded-2xl p-6">
-                      <h3 className="font-semibold mb-1">Your Dedicated Team</h3>
-                      <p className="text-xs text-muted-foreground mb-4">Reach any of us directly.</p>
+                </div>
+              ) : (
+                <div className="glass glass-hover rounded-2xl p-16 text-center">
+                  <FolderKanban className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-muted-foreground">No project assigned yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── INVOICES ─────────────────────────────────────────────────── */}
+          {tab === "questions" && (
+            <div>
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold">Questions for you</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">Your answers help us build your voice assistant and prepare your proposal.</p>
+              </div>
+              {project ? <QuestionsPanel projectId={project.id} /> : <p className="text-sm text-muted-foreground">No project yet.</p>}
+            </div>
+          )}
+
+          {tab === "team" && (
+            <div>
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold">Your Team</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">The people working on your voice assistant. Reach any of us directly.</p>
+              </div>
+              {project?.employees && project.employees.length > 0 ? (
+                <div className="glass glass-hover rounded-2xl p-6">
                       <div className="grid sm:grid-cols-2 gap-3">
                         {project.employees.map((emp) => {
                           const digits = emp.phone?.replace(/[^\d+]/g, "") ?? "";
@@ -490,25 +517,9 @@ export default function ClientDashboard() {
                         })}
                       </div>
                     </div>
-                  )}
-                </div>
               ) : (
-                <div className="glass glass-hover rounded-2xl p-16 text-center">
-                  <FolderKanban className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-                  <p className="text-muted-foreground">No project assigned yet.</p>
-                </div>
+                <p className="text-sm text-muted-foreground">Your team will appear here once we assign people to your project.</p>
               )}
-            </div>
-          )}
-
-          {/* ── INVOICES ─────────────────────────────────────────────────── */}
-          {tab === "questions" && (
-            <div>
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold">Questions for you</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">Your answers help us build your voice assistant and prepare your proposal.</p>
-              </div>
-              {project ? <QuestionsPanel projectId={project.id} /> : <p className="text-sm text-muted-foreground">No project yet.</p>}
             </div>
           )}
 
