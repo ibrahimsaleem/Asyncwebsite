@@ -128,10 +128,25 @@
   }
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent; /* no grey flash on tap; controls have their own press states */
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Taps fire immediately, and long-press doesn't select a button's label */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+  button, [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
   }
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* iOS zooms into any field under 16px and doesn't zoom back out. Unlayered so it beats text-sm on touch screens. */
+@media (pointer: coarse) {
+  input, textarea, select { font-size: 16px; }
 }
 
 @keyframes wv {

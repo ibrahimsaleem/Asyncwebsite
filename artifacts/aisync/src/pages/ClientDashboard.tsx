@@ -375,8 +375,8 @@ export default function ClientDashboard() {
                 <div className="space-y-5">
                   {/* Project card */}
                   <div className="glass glass-hover rounded-2xl p-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div>
+                    <div className="flex flex-col-reverse items-start gap-3 sm:flex-row sm:justify-between sm:gap-4 mb-4">
+                      <div className="min-w-0">
                         <h2 className="text-xl font-bold">{project.projectName}</h2>
                         <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
                       </div>

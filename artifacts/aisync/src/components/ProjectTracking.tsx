@@ -340,7 +340,7 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                           return (
                             <motion.button key={opt} type="button" aria-pressed={on} whileTap={{ scale: 0.95 }}
                               onClick={() => edit(q.id, toggleOption(q, draft[q.id] ?? "", opt))}
-                              className={`inline-flex items-center gap-1.5 min-h-10 px-3.5 rounded-full text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${on ? c.chipOn : c.chipOff}`}>
+                              className={`inline-flex items-center gap-1.5 min-h-11 px-4 py-2 text-left rounded-full text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${on ? c.chipOn : c.chipOff}`}>
                               {on && <Check className="w-3.5 h-3.5" aria-hidden />}
                               {opt}
                             </motion.button>
@@ -351,7 +351,7 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                     <div className="sm:pl-9">
                       {q.options?.length ? (
                         <textarea id={`q-${q.id}`} rows={1} className={`${input} resize-y`}
-                          aria-label={`${q.question} (note)`} placeholder="Add a note or your own answer (optional)"
+                          aria-label={`${q.question} (note)`} placeholder="Add a note (optional)"
                           value={splitAnswer(draft[q.id] ?? "", q.options).note}
                           onChange={(e) => edit(q.id, joinAnswer(splitAnswer(draft[q.id] ?? "", q.options ?? []).chosen, e.target.value))} />
                       ) : (
