@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, projectsTable, projectAssignmentsTable, employeesTable, clientsTable, projectUpdatesTable } from "@workspace/db";
+import { db, projectsTable, projectAssignmentsTable, employeesTable, clientsTable, projectUpdatesTable, projectMilestonesTable, projectQuestionsTable, invoicesTable, uploadedFilesTable, featureRequestsTable } from "@workspace/db";
 import { eq, inArray, and } from "drizzle-orm";
 import {
   CreateProjectBody,
@@ -196,6 +196,27 @@ router.post("/projects/:id/unassign", requireAdmin, async (req, res): Promise<vo
       )
     );
 
+  res.json({ success: true });
+});
+
+// Deletes a project and its tracking. Invoices, files and requests stay with the client but are unlinked.
+router.delete("/projects/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!project) {
+    res.status(404).json({ error: "Project not found" });
+    return;
+  }
+  await db.transaction(async (tx) => {
+    await tx.delete(projectQuestionsTable).where(eq(projectQuestionsTable.projectId, id));
+    await tx.delete(projectMilestonesTable).where(eq(projectMilestonesTable.projectId, id));
+    await tx.delete(projectUpdatesTable).where(eq(projectUpdatesTable.projectId, id));
+    await tx.delete(projectAssignmentsTable).where(eq(projectAssignmentsTable.projectId, id));
+    await tx.update(invoicesTable).set({ projectId: null }).where(eq(invoicesTable.projectId, id));
+    await tx.update(uploadedFilesTable).set({ projectId: null }).where(eq(uploadedFilesTable.projectId, id));
+    await tx.update(featureRequestsTable).set({ projectId: null }).where(eq(featureRequestsTable.projectId, id));
+    await tx.delete(projectsTable).where(eq(projectsTable.id, id));
+  });
   res.json({ success: true });
 });
 

@@ -14,4 +14,7 @@ export interface UploadedFile {
   fileName: string;
   filePath: string;
   uploadedAt: string;
+  /** @nullable */
+  size?: number | null;
+  uploadedBy?: string;
 }

@@ -5,6 +5,7 @@
  * Aisync API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { DemoRequestStatus } from './demoRequestStatus';
 
 export interface DemoRequest {
   id: number;
@@ -17,4 +18,5 @@ export interface DemoRequest {
   message?: string | null;
   createdAt: string;
   isDemo?: boolean;
+  status?: DemoRequestStatus;
 }

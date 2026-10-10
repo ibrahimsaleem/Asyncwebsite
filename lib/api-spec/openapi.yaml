@@ -733,6 +733,9 @@ components:
           type: string
         isDemo:
           type: boolean
+        status:
+          type: string
+          enum: [new, contacted, won, lost]
 
     # Clients
     ClientInput:
@@ -1014,6 +1017,10 @@ components:
           type: string
         uploadedAt:
           type: string
+        size:
+          type: ["integer", "null"]
+        uploadedBy:
+          type: string
 
     # Feature Requests
     FeatureRequestInput:
@@ -1043,6 +1050,8 @@ components:
         priority:
           type: string
           enum: [low, medium, high]
+        adminResponse:
+          type: ["string", "null"]
 
     FeatureRequest:
       type: object
@@ -1067,6 +1076,8 @@ components:
         createdAt:
           type: string
         clientBusinessName:
+          type: ["string", "null"]
+        adminResponse:
           type: ["string", "null"]
 
     # Dashboard

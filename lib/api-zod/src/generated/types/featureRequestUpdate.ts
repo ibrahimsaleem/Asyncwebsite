@@ -13,4 +13,6 @@ export interface FeatureRequestUpdate {
   title?: string;
   description?: string;
   priority?: FeatureRequestUpdatePriority;
+  /** @nullable */
+  adminResponse?: string | null;
 }

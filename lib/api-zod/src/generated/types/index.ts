@@ -14,6 +14,7 @@ export * from './clientUpdate';
 export * from './clientWithUser';
 export * from './demoRequest';
 export * from './demoRequestInput';
+export * from './demoRequestStatus';
 export * from './employee';
 export * from './employeeInput';
 export * from './employeeUpdate';

@@ -195,3 +195,71 @@ export function RecordPayment({ invoice }: { invoice: Invoice }) {
     </form>
   );
 }
+
+// Fix an invoice's number, amount, currency, due date or description, or delete it.
+export function EditInvoiceForm({ invoice, onDone }: { invoice: Invoice; onDone: () => void }) {
+  const update = useUpdateInvoice();
+  const refresh = useRefreshInvoices();
+  const [form, setForm] = useState({
+    invoiceNumber: invoice.invoiceNumber,
+    currency: (invoice.currency ?? "USD") as Currency,
+    total: String(invoice.totalAmount),
+    dueDate: invoice.dueDate,
+    notes: invoice.notes ?? "",
+  });
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState("");
+  const paid = Number(invoice.paidAmount);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const total = parseFloat(form.total);
+    if (!(total > 0)) return setError("Enter an amount more than 0.");
+    if (total < paid) return setError(`The total can't be less than what's already paid (${formatMoney(paid, form.currency)}).`);
+    try {
+      await update.mutateAsync({ id: invoice.id, data: { invoiceNumber: form.invoiceNumber.trim(), currency: form.currency, totalAmount: total, dueDate: form.dueDate, notes: form.notes.trim() || null } });
+      await refresh();
+      onDone();
+    } catch (err) { setError(err instanceof Error ? err.message : "Couldn't save"); }
+  }
+
+  async function remove() {
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't delete");
+      await refresh();
+      onDone();
+    } catch (err) { setError(err instanceof Error ? err.message : "Couldn't delete"); }
+  }
+
+  return (
+    <form onSubmit={save} className="grid grid-cols-1 sm:grid-cols-[1fr_7rem_1fr_1fr] gap-3 items-end">
+      <label className="block"><span className={LABEL}>Invoice number</span>
+        <input required value={form.invoiceNumber} onChange={(e) => setForm((f) => ({ ...f, invoiceNumber: e.target.value }))} className={`${INPUT} font-mono`} /></label>
+      <label className="block"><span className={LABEL}>Currency</span>
+        <select value={form.currency} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value as Currency }))} className={INPUT}>
+          <option value="INR">₹ INR</option><option value="USD">$ USD</option>
+        </select></label>
+      <label className="block"><span className={LABEL}>Amount</span>
+        <input required type="number" min="0" step="0.01" inputMode="decimal" value={form.total} onChange={(e) => setForm((f) => ({ ...f, total: e.target.value }))} className={INPUT} /></label>
+      <label className="block"><span className={LABEL}>Due date</span>
+        <input required type="date" value={form.dueDate} onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))} className={INPUT} /></label>
+      <label className="block sm:col-span-4"><span className={LABEL}>What it's for</span>
+        <input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} className={INPUT} /></label>
+      {error && <p className="sm:col-span-4 text-sm text-destructive" role="alert">{error}</p>}
+      <div className="sm:col-span-4 flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={update.isPending} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50">{update.isPending ? "Saving…" : "Save changes"}</button>
+        <button type="button" onClick={onDone} className="px-4 py-2 border border-border rounded-lg text-sm">Cancel</button>
+        {confirmDelete ? (
+          <span className="ml-auto inline-flex items-center gap-2 text-xs">
+            Delete {invoice.invoiceNumber}? The client stops seeing it.
+            <button type="button" onClick={remove} className="px-3 py-1.5 bg-destructive text-white rounded-lg font-semibold">Delete</button>
+          </span>
+        ) : (
+          <button type="button" onClick={() => setConfirmDelete(true)} className="ml-auto text-xs text-muted-foreground hover:text-destructive">Delete invoice</button>
+        )}
+      </div>
+    </form>
+  );
+}

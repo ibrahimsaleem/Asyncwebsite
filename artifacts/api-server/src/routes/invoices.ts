@@ -177,4 +177,13 @@ router.patch("/invoices/:id", requireAdmin, async (req, res): Promise<void> => {
   res.json(UpdateInvoiceResponse.parse(await formatInvoice(inv)));
 });
 
+router.delete("/invoices/:id", requireAdmin, async (req, res): Promise<void> => {
+  const [inv] = await db.delete(invoicesTable).where(eq(invoicesTable.id, Number(req.params.id))).returning({ id: invoicesTable.id });
+  if (!inv) {
+    res.status(404).json({ error: "Invoice not found" });
+    return;
+  }
+  res.json({ success: true });
+});
+
 export default router;

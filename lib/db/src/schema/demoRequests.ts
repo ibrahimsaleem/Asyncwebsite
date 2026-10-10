@@ -10,6 +10,7 @@ export const demoRequestsTable = pgTable("demo_requests", {
   phone: text("phone").notNull(),
   industry: text("industry").notNull(),
   message: text("message"),
+  status: text("status").notNull().default("new"), // new | contacted | won | lost
   isDemo: boolean("is_demo").notNull().default(false), // sample data from the first run, labelled DEMO in admin
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

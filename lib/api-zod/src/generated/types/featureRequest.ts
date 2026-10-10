@@ -20,4 +20,6 @@ export interface FeatureRequest {
   createdAt: string;
   /** @nullable */
   clientBusinessName?: string | null;
+  /** @nullable */
+  adminResponse?: string | null;
 }

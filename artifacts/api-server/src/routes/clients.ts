@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcrypt";
-import { db, usersTable, clientsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, projectsTable, projectAssignmentsTable, projectUpdatesTable, projectMilestonesTable, projectQuestionsTable, invoicesTable, uploadedFilesTable, featureRequestsTable, demoRequestsTable, usersTable, clientsTable } from "@workspace/db";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   CreateClientBody,
   GetClientParams,
@@ -144,6 +144,63 @@ router.patch("/clients/:id", requireAdmin, async (req, res): Promise<void> => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, client.userId));
   res.json(UpdateClientResponse.parse(formatClient(client, user)));
+});
+
+// Admin sets a new password for a client's portal login (clients can't reset it by email yet)
+router.post("/clients/:id/reset-password", requireAdmin, async (req, res): Promise<void> => {
+  const password = String(req.body?.password ?? "");
+  if (password.length < 10) {
+    res.status(400).json({ error: "Password must be at least 10 characters" });
+    return;
+  }
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, Number(req.params.id)));
+  if (!client) {
+    res.status(404).json({ error: "Client not found" });
+    return;
+  }
+  await db.update(usersTable).set({ passwordHash: await bcrypt.hash(password, 10) }).where(eq(usersTable.id, client.userId));
+  res.json({ success: true });
+});
+
+// Removes a client and everything that belongs to them (projects and their tracking, invoices,
+// files, requests) plus their portal login. Used for real deletions and for clearing demo data.
+async function deleteClientCascade(clientId: number) {
+  await db.transaction(async (tx) => {
+    const [client] = await tx.select().from(clientsTable).where(eq(clientsTable.id, clientId));
+    if (!client) return;
+    const projectIds = (await tx.select({ id: projectsTable.id }).from(projectsTable).where(eq(projectsTable.clientId, clientId))).map((p) => p.id);
+    if (projectIds.length) {
+      await tx.delete(projectQuestionsTable).where(inArray(projectQuestionsTable.projectId, projectIds));
+      await tx.delete(projectMilestonesTable).where(inArray(projectMilestonesTable.projectId, projectIds));
+      await tx.delete(projectUpdatesTable).where(inArray(projectUpdatesTable.projectId, projectIds));
+      await tx.delete(projectAssignmentsTable).where(inArray(projectAssignmentsTable.projectId, projectIds));
+      await tx.delete(projectsTable).where(inArray(projectsTable.id, projectIds));
+    }
+    await tx.delete(invoicesTable).where(eq(invoicesTable.clientId, clientId));
+    await tx.delete(uploadedFilesTable).where(eq(uploadedFilesTable.clientId, clientId));
+    await tx.delete(featureRequestsTable).where(eq(featureRequestsTable.clientId, clientId));
+    await tx.delete(clientsTable).where(eq(clientsTable.id, clientId));
+    await tx.delete(usersTable).where(and(eq(usersTable.id, client.userId), eq(usersTable.role, "client")));
+  });
+}
+
+router.delete("/clients/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, id));
+  if (!client) {
+    res.status(404).json({ error: "Client not found" });
+    return;
+  }
+  await deleteClientCascade(id);
+  res.json({ success: true });
+});
+
+// One click to clear the sample data the site created on its first run
+router.delete("/demo-data", requireAdmin, async (_req, res): Promise<void> => {
+  const demo = await db.select({ id: clientsTable.id }).from(clientsTable).where(eq(clientsTable.isDemo, true));
+  for (const c of demo) await deleteClientCascade(c.id);
+  const leads = await db.delete(demoRequestsTable).where(eq(demoRequestsTable.isDemo, true)).returning({ id: demoRequestsTable.id });
+  res.json({ clientsRemoved: demo.length, leadsRemoved: leads.length });
 });
 
 export default router;

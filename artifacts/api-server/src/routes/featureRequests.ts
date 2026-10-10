@@ -25,6 +25,7 @@ async function formatRequest(fr: typeof featureRequestsTable.$inferSelect) {
     status: fr.status,
     createdAt: fr.createdAt.toISOString(),
     clientBusinessName: client?.businessName ?? null,
+    adminResponse: fr.adminResponse ?? null,
   };
 }
 

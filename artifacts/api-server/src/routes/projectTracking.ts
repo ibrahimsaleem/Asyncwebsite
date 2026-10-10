@@ -66,12 +66,15 @@ router.get("/projects/:id/tracking", requireAuth, async (req, res): Promise<void
 router.patch("/projects/:id/milestones/:milestoneId", requireAdmin, async (req, res): Promise<void> => {
   const projectId = parseInt(String(req.params.id), 10);
   const milestoneId = parseInt(String(req.params.milestoneId), 10);
-  if (typeof req.body?.done !== "boolean") {
-    res.status(400).json({ error: "done must be true or false" });
+  const set: { doneAt?: Date | null; title?: string } = {};
+  if (typeof req.body?.done === "boolean") set.doneAt = req.body.done ? new Date() : null;
+  if (typeof req.body?.title === "string" && req.body.title.trim()) set.title = req.body.title.trim().slice(0, 200);
+  if (Object.keys(set).length === 0) {
+    res.status(400).json({ error: "Send done (true/false) or a new title" });
     return;
   }
   const [m] = await db.update(projectMilestonesTable)
-    .set({ doneAt: req.body.done ? new Date() : null })
+    .set(set)
     .where(and(eq(projectMilestonesTable.id, milestoneId), eq(projectMilestonesTable.projectId, projectId)))
     .returning();
   if (!m) {
@@ -79,6 +82,28 @@ router.patch("/projects/:id/milestones/:milestoneId", requireAdmin, async (req, 
     return;
   }
   res.json(m);
+});
+
+router.post("/projects/:id/milestones", requireAdmin, async (req, res): Promise<void> => {
+  const project = await loadProjectFor(req, res);
+  if (!project) return;
+  const title = String(req.body?.title ?? "").trim().slice(0, 200);
+  if (!title) {
+    res.status(400).json({ error: "Give the step a name" });
+    return;
+  }
+  const existing = await db.select().from(projectMilestonesTable).where(eq(projectMilestonesTable.projectId, project.id));
+  const position = existing.reduce((max, m) => Math.max(max, m.position), -1) + 1;
+  const [m] = await db.insert(projectMilestonesTable).values({ projectId: project.id, title, position }).returning();
+  res.status(201).json(m);
+});
+
+router.delete("/projects/:id/milestones/:milestoneId", requireAdmin, async (req, res): Promise<void> => {
+  await db.delete(projectMilestonesTable).where(and(
+    eq(projectMilestonesTable.id, parseInt(String(req.params.milestoneId), 10)),
+    eq(projectMilestonesTable.projectId, parseInt(String(req.params.id), 10)),
+  ));
+  res.json({ success: true });
 });
 
 // Admin adds questions: one per line in `questions`, all under `section`.

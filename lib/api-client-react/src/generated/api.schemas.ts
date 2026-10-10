@@ -62,6 +62,16 @@ export interface DemoRequestInput {
   message?: string | null;
 }
 
+export type DemoRequestStatus = typeof DemoRequestStatus[keyof typeof DemoRequestStatus];
+
+
+export const DemoRequestStatus = {
+  new: 'new',
+  contacted: 'contacted',
+  won: 'won',
+  lost: 'lost',
+} as const;
+
 export interface DemoRequest {
   id: number;
   name: string;
@@ -73,6 +83,7 @@ export interface DemoRequest {
   message?: string | null;
   createdAt: string;
   isDemo?: boolean;
+  status?: DemoRequestStatus;
 }
 
 export interface ClientInput {
@@ -325,6 +336,9 @@ export interface UploadedFile {
   fileName: string;
   filePath: string;
   uploadedAt: string;
+  /** @nullable */
+  size?: number | null;
+  uploadedBy?: string;
 }
 
 export type FeatureRequestInputPriority = typeof FeatureRequestInputPriority[keyof typeof FeatureRequestInputPriority];
@@ -369,6 +383,8 @@ export interface FeatureRequestUpdate {
   title?: string;
   description?: string;
   priority?: FeatureRequestUpdatePriority;
+  /** @nullable */
+  adminResponse?: string | null;
 }
 
 export type FeatureRequestPriority = typeof FeatureRequestPriority[keyof typeof FeatureRequestPriority];
@@ -403,6 +419,8 @@ export interface FeatureRequest {
   createdAt: string;
   /** @nullable */
   clientBusinessName?: string | null;
+  /** @nullable */
+  adminResponse?: string | null;
 }
 
 export interface AdminSummary {

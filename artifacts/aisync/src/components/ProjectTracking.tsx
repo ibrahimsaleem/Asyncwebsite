@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, MotionConfig } from "framer-motion";
-import { Check, CheckCircle2, ChevronDown, Circle, Trash2 } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, Circle, Pencil, Trash2 } from "lucide-react";
 
 // Timeline, milestone checklist and onboarding questions for one project.
 // These endpoints live outside the OpenAPI spec, so they use plain fetch.
@@ -85,6 +85,21 @@ export function MilestoneChecklist({ projectId, isAdmin }: { projectId: number; 
   });
   const milestones = data?.milestones ?? [];
   const done = milestones.filter((m) => m.doneAt).length;
+  const refresh = () => qc.invalidateQueries({ queryKey: trackingKey(projectId) });
+  const [renaming, setRenaming] = useState<{ id: number; title: string } | null>(null);
+  const [newStep, setNewStep] = useState("");
+  const rename = useMutation({
+    mutationFn: (m: { id: number; title: string }) => api(`/api/projects/${projectId}/milestones/${m.id}`, { method: "PATCH", body: JSON.stringify({ title: m.title }) }),
+    onSuccess: () => { refresh(); setRenaming(null); },
+  });
+  const removeStep = useMutation({
+    mutationFn: (id: number) => api(`/api/projects/${projectId}/milestones/${id}`, { method: "DELETE" }),
+    onSuccess: refresh,
+  });
+  const addStep = useMutation({
+    mutationFn: () => api(`/api/projects/${projectId}/milestones`, { method: "POST", body: JSON.stringify({ title: newStep }) }),
+    onSuccess: () => { refresh(); setNewStep(""); },
+  });
 
   return (
     <div className="glass glass-hover rounded-2xl p-6">
@@ -107,11 +122,24 @@ export function MilestoneChecklist({ projectId, isAdmin }: { projectId: number; 
           );
           return (
             <li key={m.id}>
-              {isAdmin ? (
-                <button type="button" disabled={toggle.isPending} onClick={() => toggle.mutate(m)}
-                  className="w-full flex items-start gap-3 text-left text-sm rounded-lg px-2 py-1.5 hover:bg-secondary/50 transition-colors">
-                  {body}
-                </button>
+              {isAdmin && renaming?.id === m.id ? (
+                <form className="flex gap-2 px-2 py-1" onSubmit={(e) => { e.preventDefault(); if (renaming.title.trim()) rename.mutate(renaming); }}>
+                  <input autoFocus value={renaming.title} onChange={(e) => setRenaming({ id: m.id, title: e.target.value })} aria-label="Step name"
+                    className="flex-1 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  <button type="submit" className="px-2.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold">Save</button>
+                  <button type="button" onClick={() => setRenaming(null)} className="px-2 py-1.5 border border-border rounded-lg text-xs">Cancel</button>
+                </form>
+              ) : isAdmin ? (
+                <div className="group flex items-start gap-1">
+                  <button type="button" disabled={toggle.isPending} onClick={() => toggle.mutate(m)}
+                    className="flex-1 min-w-0 flex items-start gap-3 text-left text-sm rounded-lg px-2 py-1.5 hover:bg-secondary/50 transition-colors">
+                    {body}
+                  </button>
+                  <button type="button" onClick={() => setRenaming({ id: m.id, title: m.title })} aria-label={`Rename ${m.title}`}
+                    className="p-1.5 mt-0.5 text-muted-foreground hover:text-foreground"><Pencil className="w-3.5 h-3.5" /></button>
+                  <button type="button" onClick={() => removeStep.mutate(m.id)} aria-label={`Delete ${m.title}`}
+                    className="p-1.5 mt-0.5 text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
               ) : (
                 <div className="flex items-start gap-3 text-sm px-2 py-1.5">{body}</div>
               )}
@@ -119,7 +147,16 @@ export function MilestoneChecklist({ projectId, isAdmin }: { projectId: number; 
           );
         })}
       </ul>
-      {isAdmin && <p className="text-xs text-muted-foreground mt-3">Click a step to tick or untick it. The client sees this list.</p>}
+      {isAdmin && (
+        <>
+          <form className="flex gap-2 mt-3" onSubmit={(e) => { e.preventDefault(); if (newStep.trim()) addStep.mutate(); }}>
+            <input value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Add a step, e.g. Pilot review call" aria-label="New step"
+              className="flex-1 min-w-0 bg-background border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <button type="submit" disabled={addStep.isPending || !newStep.trim()} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold disabled:opacity-50">Add step</button>
+          </form>
+          <p className="text-xs text-muted-foreground mt-2">Click a step to tick or untick it. The client sees this list.</p>
+        </>
+      )}
     </div>
   );
 }

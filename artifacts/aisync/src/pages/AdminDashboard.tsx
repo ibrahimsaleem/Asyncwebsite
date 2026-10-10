@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useUrlTab } from "@/hooks/use-url-tab";
 import AmbientBackground from "@/components/AmbientBackground";
@@ -6,7 +6,11 @@ import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { MilestoneChecklist, ProjectTimeline, QuestionsPanel } from "@/components/ProjectTracking";
 import { AdminLoginControl, EditMemberControl, ProjectTeamPicker } from "@/components/AdminTeamTools";
-import { NewInvoiceForm, RecordPayment } from "@/components/AdminInvoiceTools";
+import { EditInvoiceForm, NewInvoiceForm, RecordPayment } from "@/components/AdminInvoiceTools";
+import { AdminFilesTab } from "@/components/AdminFiles";
+import { ClientDetailsActions, RemoveDemoData } from "@/components/AdminClientActions";
+import { LeadStatus, RequestReply } from "@/components/AdminRequestReply";
+import { ChangePassword, ResetClientPassword } from "@/components/AccountTools";
 import { DualTotal, FxNote, Money } from "@/components/Money";
 
 import {
@@ -24,10 +28,10 @@ import {
   LayoutDashboard, Users, FolderKanban, UserCog, Receipt,
   Lightbulb, BookOpen, LogOut, X, Phone, Mail, Building2,
   TrendingUp, CheckCircle2, Clock, AlertCircle, ChevronRight,
-  Plus, Calendar, Menu, RefreshCw,
+  Plus, Calendar, Menu, RefreshCw, FileText,
 } from "lucide-react";
 
-const TABS = ["overview", "clients", "projects", "employees", "invoices", "feature-requests", "demo-leads"] as const;
+const TABS = ["overview", "clients", "projects", "employees", "invoices", "files", "feature-requests", "demo-leads"] as const;
 type Tab = (typeof TABS)[number];
 
 const PROJECT_STATUS_LABELS: Record<string, string> = {
@@ -260,9 +264,14 @@ export default function AdminDashboard() {
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
   const [trackingProjectId, setTrackingProjectId] = useState<number | null>(null);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [editStatus, setEditStatus] = useState<string>("onboarding");
   const [editUpdate, setEditUpdate] = useState("");
   const [editEnd, setEditEnd] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
 
   // Selected client panel data
@@ -310,11 +319,25 @@ export default function AdminDashboard() {
     } finally { setAddingProject(false); }
   }
 
-  function startEditProject(p: { id: number; status: string; latestUpdate?: string | null; expectedCompletionDate?: string | null }) {
+  function startEditProject(p: { id: number; status: string; projectName: string; description: string; startDate?: string | null; latestUpdate?: string | null; expectedCompletionDate?: string | null }) {
     setEditingProjectId(p.id);
     setEditStatus(p.status);
     setEditUpdate("");
     setEditEnd(p.expectedCompletionDate ?? "");
+    setEditName(p.projectName);
+    setEditDesc(p.description);
+    setEditStart(p.startDate ?? "");
+    setConfirmDeleteProject(false);
+  }
+
+  async function handleDeleteProject(id: number) {
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn't delete");
+      setEditingProjectId(null);
+      await Promise.all([getListProjectsQueryKey(), getGetAdminSummaryQueryKey(), getListInvoicesQueryKey()].map((queryKey) => qc.invalidateQueries({ queryKey })));
+      toast({ title: "Project deleted" });
+    } catch (err) { notifyError("Couldn't delete the project", err); }
   }
 
   async function handleSaveProject(e: React.FormEvent) {
@@ -326,6 +349,9 @@ export default function AdminDashboard() {
         id: editingProjectId,
         data: {
           status: editStatus as ProjectUpdateStatus,
+          projectName: editName.trim() || undefined,
+          description: editDesc.trim() || undefined,
+          startDate: editStart || null,
           // Leaving the box empty keeps the current message
           ...(editUpdate.trim() ? { latestUpdate: editUpdate.trim() } : {}),
           expectedCompletionDate: editEnd || null,
@@ -381,6 +407,7 @@ export default function AdminDashboard() {
     { id: "projects",          label: "Projects",         icon: FolderKanban },
     { id: "employees",         label: "Team",             icon: UserCog },
     { id: "invoices",          label: "Invoices",         icon: Receipt },
+    { id: "files",             label: "Files",            icon: FileText },
     { id: "feature-requests",  label: "Requests",         icon: Lightbulb },
     { id: "demo-leads",        label: "Demo Leads",       icon: BookOpen },
   ];
@@ -494,6 +521,7 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
+          <div className="mb-2"><ChangePassword /></div>
           <button onClick={() => logout()} className="w-full flex items-center gap-2 px-2 py-1.5 -mx-2 rounded-md text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
             <LogOut className="w-3.5 h-3.5" />
             Sign out
@@ -520,6 +548,7 @@ export default function AdminDashboard() {
                   <p className="text-amber-100/90">
                     Anything labelled <b>Demo</b> is sample data created when the site was first set up: {demoClientIds.size} sample clients with their projects, invoices and requests, plus sample demo leads.
                     They are not real. The totals below include them. Real clients have no label.
+                    <span className="block mt-1.5"><RemoveDemoData /></span>
                   </p>
                 </div>
               )}
@@ -821,7 +850,7 @@ export default function AdminDashboard() {
                           </button>
                           {!isEditing && (
                             <button onClick={() => startEditProject(p)} className="px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-semibold hover:bg-primary/25 transition-colors">
-                              Post update
+                              Edit / post update
                             </button>
                           )}
                         </div>
@@ -841,6 +870,15 @@ export default function AdminDashboard() {
                             <Field label="Expected completion">
                               <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className={INPUT} />
                             </Field>
+                            <Field label="Project name" className="sm:col-span-2">
+                              <input value={editName} onChange={(e) => setEditName(e.target.value)} className={INPUT} />
+                            </Field>
+                            <Field label="Description (the client sees this)" className="sm:col-span-2">
+                              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3} className={`${INPUT} resize-y`} />
+                            </Field>
+                            <Field label="Start date">
+                              <input type="date" value={editStart} onChange={(e) => setEditStart(e.target.value)} className={INPUT} />
+                            </Field>
                             <Field label="New message for the client" hint="Leave empty to keep the current message." className="sm:col-span-2">
                               <textarea value={editUpdate} onChange={(e) => setEditUpdate(e.target.value)} rows={3} placeholder="e.g. Consultation done — we're now building your agent's script and booking rules." className={`${INPUT} resize-none`} />
                             </Field>
@@ -850,7 +888,14 @@ export default function AdminDashboard() {
                               {savingProject ? "Saving…" : "Save update"}
                             </button>
                             <button type="button" onClick={() => setEditingProjectId(null)} className={SECONDARY_BTN}>Cancel</button>
+                            <button type="button" onClick={() => setConfirmDeleteProject((v) => !v)} className="ml-auto text-xs text-muted-foreground hover:text-destructive">Delete project</button>
                           </div>
+                          {confirmDeleteProject && (
+                            <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs flex flex-wrap items-center gap-3">
+                              <span>Delete <b>{p.projectName}</b> with its checklist, timeline and answers? Invoices and files stay with the client.</span>
+                              <button type="button" onClick={() => handleDeleteProject(p.id)} className="px-3 py-1.5 bg-destructive text-white rounded-lg font-semibold">Delete permanently</button>
+                            </div>
+                          )}
                         </form>
                       )}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
@@ -1030,9 +1075,14 @@ export default function AdminDashboard() {
                       {(invoices ?? []).map((inv) => {
                         const due = parseFloat(String(inv.dueAmount));
                         return (
-                          <tr key={inv.id} className="hover:bg-secondary/10 transition-colors">
+                          <Fragment key={inv.id}>
+                          <tr className="hover:bg-secondary/10 transition-colors">
                             <td className="px-3.5 py-3.5">
-                              <p className="font-mono text-xs">{inv.invoiceNumber}</p>
+                              <p className="font-mono text-xs flex items-center gap-2">{inv.invoiceNumber}
+                                <button type="button" onClick={() => setEditingInvoiceId(editingInvoiceId === inv.id ? null : inv.id)} className="font-sans text-[11px] font-semibold text-primary hover:underline">
+                                  {editingInvoiceId === inv.id ? "Close" : "Edit"}
+                                </button>
+                              </p>
                               {inv.notes && <p className="text-xs text-muted-foreground mt-0.5 max-w-[10rem] truncate" title={inv.notes}>{inv.notes}</p>}
                             </td>
                             <td className="px-3.5 py-3.5 font-medium"><span className="inline-flex items-center gap-2">{inv.clientBusinessName ?? `Client #${inv.clientId}`} <DemoBadge show={isDemoClient(inv.clientId)} /></span></td>
@@ -1047,6 +1097,12 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-3.5 py-3.5 text-muted-foreground whitespace-nowrap">{inv.dueDate ? shortDate(inv.dueDate) : "—"}</td>
                           </tr>
+                          {editingInvoiceId === inv.id && (
+                            <tr className="bg-secondary/10">
+                              <td colSpan={7} className="px-3.5 py-4"><EditInvoiceForm invoice={inv} onDone={() => setEditingInvoiceId(null)} /></td>
+                            </tr>
+                          )}
+                          </Fragment>
                         );
                       })}
                     </tbody>
@@ -1057,6 +1113,13 @@ export default function AdminDashboard() {
                   empty icon={Receipt} emptyTitle="No invoices yet." />
               )}
               <div className="mt-3"><FxNote /></div>
+            </div>
+          )}
+
+          {tab === "files" && (
+            <div>
+              <PageHeader title="Files" subtitle="Documents clients uploaded, and files you shared with them" />
+              <AdminFilesTab clients={clients ?? []} />
             </div>
           )}
 
@@ -1082,6 +1145,7 @@ export default function AdminDashboard() {
                           </div>
                           {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
                           {req.clientBusinessName && <p className="text-xs text-muted-foreground/70 mt-1.5 flex items-center gap-1"><Building2 className="w-3 h-3" /> {req.clientBusinessName} <DemoBadge show={isDemoClient(req.clientId)} /></p>}
+                          <RequestReply request={req} />
                         </div>
                         {actionable && (
                           <div className="flex gap-2 shrink-0">
@@ -1121,6 +1185,7 @@ export default function AdminDashboard() {
                               <p className="font-semibold text-sm">{d.name}</p>
                               {d.industry && <span className={`${PILL} ${is.bg} ${is.text}`}>{d.industry}</span>}
                               <DemoBadge show={!!d.isDemo} />
+                              <LeadStatus id={d.id} status={d.status ?? "new"} />
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">{d.businessName}</p>
                             {d.message && <p className="text-xs text-muted-foreground mt-2 line-clamp-2 italic">“{d.message}”</p>}
@@ -1205,6 +1270,7 @@ export default function AdminDashboard() {
                     </div>
                   )}
                 </div>
+                <div className="mt-3"><ClientDetailsActions key={selectedClient.id} client={selectedClient} onDeleted={() => { setSelectedClientId(null); toast({ title: "Client deleted" }); }} /></div>
               </section>
 
               {/* Portal login */}
@@ -1212,6 +1278,7 @@ export default function AdminDashboard() {
                 <h3 className={SECTION_LABEL}>Portal Access</h3>
                 <div className="bg-secondary/30 rounded-xl p-4 text-xs">
                   <div className="flex justify-between gap-3"><span className="text-muted-foreground shrink-0">Login email</span><span className="font-mono truncate">{selectedClient.userEmail}</span></div>
+                  <div className="mt-3 pt-3 border-t border-border/40"><ResetClientPassword key={selectedClient.id} clientId={selectedClient.id} email={selectedClient.userEmail ?? selectedClient.email} /></div>
                 </div>
               </section>
 

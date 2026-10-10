@@ -1,7 +1,5 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { db, uploadedFilesTable, clientsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import {
@@ -13,90 +11,106 @@ import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
-const workspaceRoot = process.cwd().endsWith(path.join("artifacts", "api-server"))
-  ? path.resolve(process.cwd(), "../..")
-  : process.cwd();
-const uploadsDir = path.resolve(workspaceRoot, "artifacts/api-server/uploads");
+// Kept in memory, then stored in the database (see the schema for why not on disk)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// Everything except the file contents, so listing stays light
+const listColumns = {
+  id: uploadedFilesTable.id,
+  clientId: uploadedFilesTable.clientId,
+  projectId: uploadedFilesTable.projectId,
+  fileName: uploadedFilesTable.fileName,
+  size: uploadedFilesTable.size,
+  uploadedBy: uploadedFilesTable.uploadedBy,
+  uploadedAt: uploadedFilesTable.uploadedAt,
+};
+type FileRow = { id: number; clientId: number; projectId: number | null; fileName: string; size: number | null; uploadedBy: string; uploadedAt: Date };
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}-${file.originalname}`);
-  },
-});
-
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
-
-function formatFile(f: typeof uploadedFilesTable.$inferSelect) {
+function formatFile(f: FileRow) {
   return {
     id: f.id,
     clientId: f.clientId,
     projectId: f.projectId ?? null,
     fileName: f.fileName,
-    filePath: f.filePath,
+    filePath: `/api/files/${f.id}/download`,
     uploadedAt: f.uploadedAt.toISOString(),
+    size: f.size ?? null,
+    uploadedBy: f.uploadedBy,
   };
 }
 
-router.get("/files", requireAuth, async (req, res): Promise<void> => {
-  let files: typeof uploadedFilesTable.$inferSelect[];
+async function myClientId(req: Request) {
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
+  return client?.id ?? null;
+}
 
+router.get("/files", requireAuth, async (req, res): Promise<void> => {
+  let files: FileRow[];
   if (req.session.userRole === "admin") {
-    files = await db.select().from(uploadedFilesTable);
+    files = await db.select(listColumns).from(uploadedFilesTable);
   } else {
-    const [client] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
-    if (!client) {
+    const clientId = await myClientId(req);
+    if (!clientId) {
       res.json([]);
       return;
     }
-    files = await db.select().from(uploadedFilesTable).where(eq(uploadedFilesTable.clientId, client.id));
+    files = await db.select(listColumns).from(uploadedFilesTable).where(eq(uploadedFilesTable.clientId, clientId));
   }
-
   res.json(ListFilesResponse.parse(files.map(formatFile)));
 });
 
-// Handle multipart uploads via multer — the OpenAPI spec uses JSON body for typing,
-// but the actual endpoint accepts multipart/form-data
+// multipart/form-data: "file", plus "clientId" when an admin uploads for a client
 router.post("/files", requireAuth, upload.single("file"), async (req, res): Promise<void> => {
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
-  if (!client && req.session.userRole !== "admin") {
-    res.status(403).json({ error: "No client profile found" });
-    return;
-  }
-
-  const rawClientId = client?.id ?? parseInt(req.body.clientId as string, 10);
-  if (!rawClientId || Number.isNaN(rawClientId)) {
-    res.status(400).json({ error: "clientId is required" });
-    return;
-  }
-  const clientId = rawClientId;
-  const projectId = req.body.projectId ? parseInt(req.body.projectId as string, 10) : null;
-
-  let fileName: string;
-  let filePath: string;
-
-  if (req.file) {
-    fileName = req.file.originalname;
-    filePath = `/api/uploads/${req.file.filename}`;
-  } else if (req.body.fileName) {
-    fileName = req.body.fileName as string;
-    filePath = `/api/uploads/${fileName}`;
-  } else {
+  if (!req.file) {
     res.status(400).json({ error: "No file provided" });
     return;
   }
+  const isAdmin = req.session.userRole === "admin";
+  const clientId = isAdmin ? parseInt(String(req.body.clientId), 10) : await myClientId(req);
+  if (!clientId || Number.isNaN(clientId)) {
+    res.status(isAdmin ? 400 : 403).json({ error: isAdmin ? "Choose which client this file is for" : "No client profile found" });
+    return;
+  }
+  if (isAdmin) {
+    const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, clientId));
+    if (!client) {
+      res.status(400).json({ error: "Client not found" });
+      return;
+    }
+  }
+  const projectId = req.body.projectId ? parseInt(String(req.body.projectId), 10) : null;
 
-  const [file] = await db
-    .insert(uploadedFilesTable)
-    .values({ clientId, projectId, fileName, filePath })
-    .returning();
+  const [file] = await db.insert(uploadedFilesTable).values({
+    clientId,
+    projectId,
+    fileName: req.file.originalname.slice(0, 200),
+    filePath: "",
+    data: req.file.buffer,
+    mimeType: req.file.mimetype,
+    size: req.file.size,
+    uploadedBy: isAdmin ? "admin" : "client",
+  }).returning(listColumns);
 
   res.status(201).json(UploadFileResponse.parse(formatFile(file)));
+});
+
+// Only the owning client or an admin can download. Always sent as an attachment so a file
+// can never run as a page on our domain.
+router.get("/files/:id/download", requireAuth, async (req, res): Promise<void> => {
+  const id = parseInt(String(req.params.id), 10);
+  const [file] = await db.select().from(uploadedFilesTable).where(eq(uploadedFilesTable.id, id));
+  if (!file || !file.data) {
+    res.status(404).json({ error: "File not found" });
+    return;
+  }
+  if (req.session.userRole !== "admin" && (await myClientId(req)) !== file.clientId) {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`);
+  res.send(file.data);
 });
 
 router.delete("/files/:id", requireAuth, async (req, res): Promise<void> => {
@@ -105,26 +119,17 @@ router.delete("/files/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-
-  const [file] = await db.select().from(uploadedFilesTable).where(eq(uploadedFilesTable.id, params.data.id));
+  const [file] = await db.select(listColumns).from(uploadedFilesTable).where(eq(uploadedFilesTable.id, params.data.id));
   if (!file) {
     res.sendStatus(204);
     return;
   }
-
-  // Non-admins may only delete their own files
-  if (req.session.userRole !== "admin") {
-    const [client] = await db.select().from(clientsTable).where(eq(clientsTable.userId, req.session.userId!));
-    if (!client || client.id !== file.clientId) {
-      res.status(403).json({ error: "Access denied" });
-      return;
-    }
+  // Clients may only delete files they uploaded themselves
+  if (req.session.userRole !== "admin" && ((await myClientId(req)) !== file.clientId || file.uploadedBy === "admin")) {
+    res.status(403).json({ error: "Only files you uploaded can be removed" });
+    return;
   }
-
-  const diskPath = path.resolve(uploadsDir, path.basename(file.filePath));
-  if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
   await db.delete(uploadedFilesTable).where(eq(uploadedFilesTable.id, params.data.id));
-
   res.sendStatus(204);
 });
 

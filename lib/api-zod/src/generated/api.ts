@@ -110,7 +110,8 @@ export const CreateDemoRequestResponse = zod.object({
   "industry": zod.string(),
   "message": zod.string().nullish(),
   "createdAt": zod.string(),
-  "isDemo": zod.boolean().optional()
+  "isDemo": zod.boolean().optional(),
+  "status": zod.enum(['new', 'contacted', 'won', 'lost']).optional()
 })
 
 
@@ -126,7 +127,8 @@ export const ListDemoRequestsResponseItem = zod.object({
   "industry": zod.string(),
   "message": zod.string().nullish(),
   "createdAt": zod.string(),
-  "isDemo": zod.boolean().optional()
+  "isDemo": zod.boolean().optional(),
+  "status": zod.enum(['new', 'contacted', 'won', 'lost']).optional()
 })
 export const ListDemoRequestsResponse = zod.array(ListDemoRequestsResponseItem)
 
@@ -577,7 +579,9 @@ export const ListFilesResponseItem = zod.object({
   "projectId": zod.number().nullish(),
   "fileName": zod.string(),
   "filePath": zod.string(),
-  "uploadedAt": zod.string()
+  "uploadedAt": zod.string(),
+  "size": zod.number().nullish(),
+  "uploadedBy": zod.string().optional()
 })
 export const ListFilesResponse = zod.array(ListFilesResponseItem)
 
@@ -596,7 +600,9 @@ export const UploadFileResponse = zod.object({
   "projectId": zod.number().nullish(),
   "fileName": zod.string(),
   "filePath": zod.string(),
-  "uploadedAt": zod.string()
+  "uploadedAt": zod.string(),
+  "size": zod.number().nullish(),
+  "uploadedBy": zod.string().optional()
 })
 
 
@@ -622,7 +628,8 @@ export const ListFeatureRequestsResponseItem = zod.object({
   "priority": zod.enum(['low', 'medium', 'high']),
   "status": zod.enum(['new', 'in_review', 'approved', 'completed', 'rejected']),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "adminResponse": zod.string().nullish()
 })
 export const ListFeatureRequestsResponse = zod.array(ListFeatureRequestsResponseItem)
 
@@ -646,7 +653,8 @@ export const CreateFeatureRequestResponse = zod.object({
   "priority": zod.enum(['low', 'medium', 'high']),
   "status": zod.enum(['new', 'in_review', 'approved', 'completed', 'rejected']),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "adminResponse": zod.string().nullish()
 })
 
 
@@ -661,7 +669,8 @@ export const UpdateFeatureRequestBody = zod.object({
   "status": zod.enum(['new', 'in_review', 'approved', 'completed', 'rejected']).optional(),
   "title": zod.string().optional(),
   "description": zod.string().optional(),
-  "priority": zod.enum(['low', 'medium', 'high']).optional()
+  "priority": zod.enum(['low', 'medium', 'high']).optional(),
+  "adminResponse": zod.string().nullish()
 })
 
 export const UpdateFeatureRequestResponse = zod.object({
@@ -673,7 +682,8 @@ export const UpdateFeatureRequestResponse = zod.object({
   "priority": zod.enum(['low', 'medium', 'high']),
   "status": zod.enum(['new', 'in_review', 'approved', 'completed', 'rejected']),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "adminResponse": zod.string().nullish()
 })
 
 

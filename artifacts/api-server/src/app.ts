@@ -74,12 +74,10 @@ app.use(
   }),
 );
 
-// Serve uploaded files statically
+// Uploaded files are served by GET /api/files/:id/download (login required), never as static files
 const workspaceRoot = process.cwd().endsWith(path.join("artifacts", "api-server"))
   ? path.resolve(process.cwd(), "../..")
   : process.cwd();
-const uploadsDir = path.resolve(workspaceRoot, "artifacts/api-server/uploads");
-app.use("/api/uploads", express.static(uploadsDir));
 
 app.use("/api", router);
 

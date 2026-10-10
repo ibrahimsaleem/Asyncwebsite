@@ -7,6 +7,22 @@ import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
+// Brute-force guard: 8 wrong passwords per email + IP in 15 minutes, then wait.
+// ponytail: in-memory, resets on restart and isn't shared across instances; move to Postgres/Redis if we scale out.
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILS = 8;
+const fails = new Map<string, { count: number; first: number }>();
+function tooManyAttempts(key: string) {
+  const f = fails.get(key);
+  if (f && Date.now() - f.first > WINDOW_MS) fails.delete(key);
+  return (fails.get(key)?.count ?? 0) >= MAX_FAILS;
+}
+function recordFail(key: string) {
+  const f = fails.get(key);
+  if (!f || Date.now() - f.first > WINDOW_MS) fails.set(key, { count: 1, first: Date.now() });
+  else f.count++;
+}
+
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
@@ -16,18 +32,19 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const { password } = parsed.data;
   const email = parsed.data.email.trim().toLowerCase();
+  const key = `${email}|${req.ip}`;
+  if (tooManyAttempts(key)) {
+    res.status(429).json({ error: "Too many wrong attempts. Please wait 15 minutes and try again." });
+    return;
+  }
   const [user] = await db.select().from(usersTable).where(sql`lower(${usersTable.email}) = ${email}`);
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    recordFail(key);
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    res.status(401).json({ error: "Invalid email or password" });
-    return;
-  }
+  fails.delete(key);
 
   req.session.userId = user.id;
   req.session.userRole = user.role;
@@ -105,6 +122,22 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       createdAt: user.createdAt.toISOString(),
     }),
   });
+});
+
+router.post("/auth/change-password", requireAuth, async (req, res): Promise<void> => {
+  const current = String(req.body?.currentPassword ?? "");
+  const next = String(req.body?.newPassword ?? "");
+  if (next.length < 10) {
+    res.status(400).json({ error: "New password must be at least 10 characters" });
+    return;
+  }
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.session.userId!));
+  if (!user || !(await bcrypt.compare(current, user.passwordHash))) {
+    res.status(400).json({ error: "Your current password isn't right" });
+    return;
+  }
+  await db.update(usersTable).set({ passwordHash: await bcrypt.hash(next, 10) }).where(eq(usersTable.id, user.id));
+  res.json({ success: true });
 });
 
 router.post("/auth/logout", (req, res): void => {

@@ -10,6 +10,7 @@ export const featureRequestsTable = pgTable("feature_requests", {
   description: text("description").notNull(),
   priority: text("priority").notNull().default("medium"), // low | medium | high
   status: text("status").notNull().default("new"), // new | in_review | approved | completed | rejected
+  adminResponse: text("admin_response"), // our reply, shown to the client under their request
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
