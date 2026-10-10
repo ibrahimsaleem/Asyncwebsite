@@ -7,7 +7,15 @@ import { CheckCircle2, Circle, Trash2 } from "lucide-react";
 
 type Update = { id: number; message: string; createdAt: string };
 type Milestone = { id: number; title: string; position: number; doneAt: string | null };
-type Question = { id: number; section: string; question: string; answer: string | null; answeredAt: string | null };
+type Question = { id: number; section: string; question: string; options: string[] | null; answer: string | null; answeredAt: string | null };
+
+// Chosen options are kept in the answer text, separated by "; ", so typed notes and choices live together.
+const SEP = "; ";
+const parts = (answer: string) => answer.split(";").map((p) => p.trim()).filter(Boolean);
+function toggleOption(answer: string, option: string) {
+  const current = parts(answer);
+  return (current.includes(option) ? current.filter((p) => p !== option) : [...current, option]).join(SEP);
+}
 type Tracking = { updates: Update[]; milestones: Milestone[]; questions: Question[] };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -181,7 +189,22 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                       className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
                   )}
                 </div>
+                {q.options && q.options.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {q.options.map((opt) => {
+                      const on = parts(draft[q.id] ?? "").includes(opt);
+                      return (
+                        <button key={opt} type="button" aria-pressed={on}
+                          onClick={() => setDraft((d) => ({ ...d, [q.id]: toggleOption(d[q.id] ?? "", opt) }))}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground/80 hover:bg-secondary"}`}>
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <textarea id={`q-${q.id}`} rows={2} value={draft[q.id] ?? ""} className={`${input} resize-y`}
+                  placeholder={q.options?.length ? "Pick one or more above, or type your own answer" : "Your answer"}
                   onChange={(e) => setDraft((d) => ({ ...d, [q.id]: e.target.value }))} />
               </div>
             ))}
@@ -193,7 +216,8 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
         <form className="glass rounded-2xl p-5 space-y-3" onSubmit={(e) => { e.preventDefault(); add.mutate(); }}>
           <h3 className="font-semibold text-sm">Add questions</h3>
           <input value={newSection} onChange={(e) => setNewSection(e.target.value)} placeholder="Section, e.g. Systems" className={input} />
-          <textarea value={newQuestions} onChange={(e) => setNewQuestions(e.target.value)} rows={4} placeholder="One question per line" className={`${input} resize-y`} />
+          <textarea value={newQuestions} onChange={(e) => setNewQuestions(e.target.value)} rows={4} placeholder={"One question per line. Add answer options after | \ne.g. Preferred voice? | Female | Male | No preference"} className={`${input} resize-y`} />
+          <p className="text-xs text-muted-foreground">Options become buttons the client can click. Avoid using ; inside an option.</p>
           <button type="submit" disabled={add.isPending || !newQuestions.trim()}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
             {add.isPending ? "Adding…" : "Add questions"}

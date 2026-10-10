@@ -82,6 +82,7 @@ router.patch("/projects/:id/milestones/:milestoneId", requireAdmin, async (req, 
 });
 
 // Admin adds questions: one per line in `questions`, all under `section`.
+// Optional answer choices after the question, split by "|": "Preferred voice? | Female | Male"
 router.post("/projects/:id/questions", requireAdmin, async (req, res): Promise<void> => {
   const project = await loadProjectFor(req, res);
   if (!project) return;
@@ -94,7 +95,10 @@ router.post("/projects/:id/questions", requireAdmin, async (req, res): Promise<v
   const existing = await db.select().from(projectQuestionsTable).where(eq(projectQuestionsTable.projectId, project.id));
   const start = existing.reduce((max, q) => Math.max(max, q.position), -1) + 1;
   const created = await db.insert(projectQuestionsTable)
-    .values(lines.map((question, i) => ({ projectId: project.id, section, question, position: start + i })))
+    .values(lines.map((line, i) => {
+      const [question, ...options] = line.split("|").map((p) => p.trim()).filter(Boolean);
+      return { projectId: project.id, section, question, options: options.length ? options : null, position: start + i };
+    }))
     .returning();
   res.status(201).json(created);
 });

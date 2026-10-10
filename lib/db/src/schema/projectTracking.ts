@@ -23,6 +23,8 @@ export const projectQuestionsTable = pgTable("project_questions", {
   projectId: integer("project_id").notNull(),
   section: text("section").notNull().default("General"),
   question: text("question").notNull(),
+  // Suggested answers shown as clickable chips; the client can still type anything.
+  options: text("options").array(),
   answer: text("answer"),
   position: integer("position").notNull().default(0),
   answeredAt: timestamp("answered_at", { withTimezone: true }),
