@@ -221,6 +221,14 @@ export const InvoiceInputStatus = {
   overdue: 'overdue',
 } as const;
 
+export type InvoiceInputCurrency = typeof InvoiceInputCurrency[keyof typeof InvoiceInputCurrency];
+
+
+export const InvoiceInputCurrency = {
+  INR: 'INR',
+  USD: 'USD',
+} as const;
+
 export interface InvoiceInput {
   clientId: number;
   /** @nullable */
@@ -233,6 +241,7 @@ export interface InvoiceInput {
   dueDate: string;
   /** @nullable */
   notes?: string | null;
+  currency?: InvoiceInputCurrency;
 }
 
 export type InvoiceUpdateStatus = typeof InvoiceUpdateStatus[keyof typeof InvoiceUpdateStatus];
@@ -245,6 +254,14 @@ export const InvoiceUpdateStatus = {
   overdue: 'overdue',
 } as const;
 
+export type InvoiceUpdateCurrency = typeof InvoiceUpdateCurrency[keyof typeof InvoiceUpdateCurrency];
+
+
+export const InvoiceUpdateCurrency = {
+  INR: 'INR',
+  USD: 'USD',
+} as const;
+
 export interface InvoiceUpdate {
   invoiceNumber?: string;
   totalAmount?: number;
@@ -254,6 +271,7 @@ export interface InvoiceUpdate {
   dueDate?: string;
   /** @nullable */
   notes?: string | null;
+  currency?: InvoiceUpdateCurrency;
 }
 
 export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
@@ -264,6 +282,14 @@ export const InvoiceStatus = {
   partial: 'partial',
   due: 'due',
   overdue: 'overdue',
+} as const;
+
+export type InvoiceCurrency = typeof InvoiceCurrency[keyof typeof InvoiceCurrency];
+
+
+export const InvoiceCurrency = {
+  INR: 'INR',
+  USD: 'USD',
 } as const;
 
 export interface Invoice {
@@ -282,6 +308,7 @@ export interface Invoice {
   createdAt: string;
   /** @nullable */
   clientBusinessName?: string | null;
+  currency?: InvoiceCurrency;
 }
 
 export interface FileUploadInput {

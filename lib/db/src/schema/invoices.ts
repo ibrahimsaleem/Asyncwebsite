@@ -13,6 +13,7 @@ export const invoicesTable = pgTable("invoices", {
   status: text("status").notNull().default("due"), // paid | partial | due | overdue
   dueDate: date("due_date", { mode: "string" }).notNull(),
   notes: text("notes"),
+  currency: text("currency").notNull().default("USD"), // INR or USD; amounts are shown in this currency
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

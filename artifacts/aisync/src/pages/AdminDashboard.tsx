@@ -6,6 +6,8 @@ import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { MilestoneChecklist, ProjectTimeline, QuestionsPanel } from "@/components/ProjectTracking";
 import { AdminLoginControl, EditMemberControl, ProjectTeamPicker } from "@/components/AdminTeamTools";
+import { NewInvoiceForm, RecordPayment } from "@/components/AdminInvoiceTools";
+import { DualTotal, FxNote, Money } from "@/components/Money";
 
 import {
   useGetAdminSummary, useListClients, useListProjects, useListEmployees,
@@ -106,13 +108,6 @@ function plural(n: number, word: string) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
-function money(value: number | string) {
-  const n = typeof value === "number" ? value : parseFloat(String(value));
-  const v = Number.isFinite(n) ? n : 0;
-  // Whole dollars stay short ($1,500); anything with cents shows both digits ($2,800.50)
-  const cents = Number.isInteger(v) ? 0 : 2;
-  return `$${v.toLocaleString(undefined, { minimumFractionDigits: cents, maximumFractionDigits: cents })}`;
-}
 
 function shortDate(value: string) {
   // Plain "YYYY-MM-DD" dates are calendar days; parsing them as UTC shows the previous day in US time zones
@@ -264,6 +259,7 @@ export default function AdminDashboard() {
   // Inline "post an update to the client" editor on the Projects tab
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
   const [trackingProjectId, setTrackingProjectId] = useState<number | null>(null);
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editStatus, setEditStatus] = useState<string>("onboarding");
   const [editUpdate, setEditUpdate] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -534,8 +530,8 @@ export default function AdminDashboard() {
                   { label: "Total Clients",       value: summary?.totalClients ?? 0,           icon: Users,         color: "text-foreground",   accent: "bg-blue-500/10",       go: "clients" as Tab },
                   { label: "Active Projects",     value: summary?.activeProjects ?? 0,         icon: FolderKanban,  color: "text-primary",      accent: "bg-primary/10",        go: "projects" as Tab },
                   { label: "Completed Projects",  value: summary?.completedProjects ?? 0,      icon: CheckCircle2,  color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "projects" as Tab },
-                  { label: "Revenue Collected",   value: money(summary?.totalPaid ?? 0),       icon: TrendingUp,    color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "invoices" as Tab },
-                  { label: "Outstanding Balance", value: money(summary?.totalDue ?? 0),        icon: AlertCircle,   color: "text-red-400",      accent: "bg-destructive/10",    go: "invoices" as Tab },
+                  { label: "Revenue Collected",   value: <DualTotal items={invoices ?? []} amount={(i) => i.paidAmount} />,       icon: TrendingUp,    color: "text-emerald-400",  accent: "bg-emerald-500/10",    go: "invoices" as Tab },
+                  { label: "Outstanding Balance", value: <DualTotal items={invoices ?? []} amount={(i) => i.dueAmount} />,        icon: AlertCircle,   color: "text-red-400",      accent: "bg-destructive/10",    go: "invoices" as Tab },
                   { label: "Pending Requests",    value: summary?.pendingFeatureRequests ?? 0, icon: Lightbulb,     color: "text-amber-400",    accent: "bg-amber-500/10",      go: "feature-requests" as Tab },
                 ].map((m) => {
                   const Icon = m.icon;
@@ -741,7 +737,7 @@ export default function AdminDashboard() {
                       {outstanding > 0 && (
                         <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Outstanding</span>
-                          <span className="text-red-400 font-semibold tabular-nums">{money(outstanding)}</span>
+                          <span className="text-red-400 font-semibold tabular-nums"><DualTotal items={clientInv.filter((i) => Number(i.dueAmount) > 0)} amount={(i) => i.dueAmount} className="items-end" /></span>
                         </div>
                       )}
                     </div>
@@ -992,19 +988,29 @@ export default function AdminDashboard() {
           {/* ── INVOICES ─────────────────────────────────────────────────── */}
           {tab === "invoices" && (
             <div>
-              <PageHeader title="Invoices" subtitle="All billing records across clients" />
+              <PageHeader title="Invoices" subtitle="All billing records across clients"
+                action={
+                  <button onClick={() => setShowInvoiceForm((v) => !v)} className={showInvoiceForm ? SECONDARY_BTN : PRIMARY_BTN}>
+                    {showInvoiceForm ? <><X className="w-4 h-4" /> Cancel</> : <><Plus className="w-4 h-4" /> New Invoice</>}
+                  </button>
+                }
+              />
+              {showInvoiceForm && (
+                <NewInvoiceForm clients={clients ?? []} projects={projects ?? []} invoices={invoices ?? []}
+                  onDone={() => { setShowInvoiceForm(false); toast({ title: "Invoice saved", description: "The client can see it in their portal." }); }} />
+              )}
 
               {/* Summary bar */}
               {(invoices ?? []).length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {[
-                    { label: "Total Billed", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.totalAmount)), 0), color: "text-foreground" },
-                    { label: "Collected", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0), color: "text-emerald-400" },
-                    { label: "Outstanding", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0), color: "text-red-400" },
+                    { label: "Total Billed", value: <DualTotal items={invoices ?? []} amount={(i) => i.totalAmount} />, color: "text-foreground" },
+                    { label: "Collected", value: <DualTotal items={invoices ?? []} amount={(i) => i.paidAmount} />, color: "text-emerald-400" },
+                    { label: "Outstanding", value: <DualTotal items={invoices ?? []} amount={(i) => i.dueAmount} />, color: "text-red-400" },
                   ].map((s) => (
                     <div key={s.label} className="glass glass-hover rounded-2xl p-5">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">{s.label}</p>
-                      <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{money(s.value)}</p>
+                      <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
                     </div>
                   ))}
                 </div>
@@ -1012,11 +1018,11 @@ export default function AdminDashboard() {
 
               {(invoices ?? []).length > 0 ? (
                 <div className="glass glass-hover rounded-2xl overflow-x-auto">
-                  <table className="w-full min-w-[640px] text-sm">
+                  <table className="w-full min-w-[760px] text-sm">
                     <thead>
                       <tr className="border-b border-border/50 bg-secondary/20">
                         {["Invoice", "Client", "Total", "Collected", "Balance", "Status", "Due date"].map((h, i) => (
-                          <th key={h} className={`px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider ${i >= 2 && i <= 4 ? "text-right" : "text-left"}`}>{h}</th>
+                          <th key={h} className={`px-3.5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider ${i >= 2 && i <= 4 ? "text-right" : "text-left"}`}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1025,15 +1031,21 @@ export default function AdminDashboard() {
                         const due = parseFloat(String(inv.dueAmount));
                         return (
                           <tr key={inv.id} className="hover:bg-secondary/10 transition-colors">
-                            <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">#{inv.id}</td>
-                            <td className="px-5 py-3.5 font-medium"><span className="inline-flex items-center gap-2">{inv.clientBusinessName ?? `Client #${inv.clientId}`} <DemoBadge show={isDemoClient(inv.clientId)} /></span></td>
-                            <td className="px-5 py-3.5 font-semibold text-right tabular-nums">{money(inv.totalAmount)}</td>
-                            <td className="px-5 py-3.5 text-emerald-400 font-medium text-right tabular-nums">{money(inv.paidAmount)}</td>
-                            <td className={`px-5 py-3.5 font-medium text-right tabular-nums ${due > 0 ? "text-red-400" : "text-muted-foreground"}`}>{money(due)}</td>
-                            <td className="px-5 py-3.5">
-                              <span className={`${PILL} ${INVOICE_STATUS_STYLES[inv.status] ?? NEUTRAL_PILL}`}>{titleCase(inv.status)}</span>
+                            <td className="px-3.5 py-3.5">
+                              <p className="font-mono text-xs">{inv.invoiceNumber}</p>
+                              {inv.notes && <p className="text-xs text-muted-foreground mt-0.5 max-w-[10rem] truncate" title={inv.notes}>{inv.notes}</p>}
                             </td>
-                            <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap">{inv.dueDate ? shortDate(inv.dueDate) : "—"}</td>
+                            <td className="px-3.5 py-3.5 font-medium"><span className="inline-flex items-center gap-2">{inv.clientBusinessName ?? `Client #${inv.clientId}`} <DemoBadge show={isDemoClient(inv.clientId)} /></span></td>
+                            <td className="px-3.5 py-3.5 font-semibold text-right tabular-nums"><Money value={inv.totalAmount} currency={inv.currency} className="items-end" /></td>
+                            <td className="px-3.5 py-3.5 text-emerald-400 font-medium text-right tabular-nums"><Money value={inv.paidAmount} currency={inv.currency} className="items-end" /></td>
+                            <td className={`px-3.5 py-3.5 font-medium text-right tabular-nums ${due > 0 ? "text-red-400" : "text-muted-foreground"}`}><Money value={due} currency={inv.currency} className="items-end" /></td>
+                            <td className="px-3.5 py-3.5">
+                              <div className="flex flex-col items-start gap-2">
+                                <span className={`${PILL} ${INVOICE_STATUS_STYLES[inv.status] ?? NEUTRAL_PILL}`}>{titleCase(inv.status)}</span>
+                                {Number(inv.dueAmount) > 0 && <RecordPayment invoice={inv} />}
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-3.5 text-muted-foreground whitespace-nowrap">{inv.dueDate ? shortDate(inv.dueDate) : "—"}</td>
                           </tr>
                         );
                       })}
@@ -1044,6 +1056,7 @@ export default function AdminDashboard() {
                 <ListState loading={invoicesQ.isLoading} error={invoicesQ.isError} onRetry={() => invoicesQ.refetch()}
                   empty icon={Receipt} emptyTitle="No invoices yet." />
               )}
+              <div className="mt-3"><FxNote /></div>
             </div>
           )}
 
@@ -1251,12 +1264,12 @@ export default function AdminDashboard() {
                       return (
                         <div key={inv.id} className="bg-secondary/30 rounded-xl p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-mono text-muted-foreground">#{inv.id}</span>
+                            <span className="text-xs font-mono text-muted-foreground">{inv.invoiceNumber}</span>
                             <span className={`${PILL} ${INVOICE_STATUS_STYLES[inv.status] ?? NEUTRAL_PILL}`}>{titleCase(inv.status)}</span>
                           </div>
                           <div className="flex flex-wrap justify-between gap-x-3 text-sm font-semibold mb-2 tabular-nums">
-                            <span>Total {money(total)}</span>
-                            <span className="text-emerald-400">Paid {money(paid)}</span>
+                            <span>Total <Money value={total} currency={inv.currency} inline /></span>
+                            <span className="text-emerald-400">Paid <Money value={paid} currency={inv.currency} inline /></span>
                           </div>
                           <div className="h-1.5 bg-border rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
                             <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />

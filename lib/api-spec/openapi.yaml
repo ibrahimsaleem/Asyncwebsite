@@ -929,6 +929,9 @@ components:
           type: string
         notes:
           type: ["string", "null"]
+        currency:
+          type: string
+          enum: [INR, USD]
 
     InvoiceUpdate:
       type: object
@@ -948,6 +951,9 @@ components:
           type: string
         notes:
           type: ["string", "null"]
+        currency:
+          type: string
+          enum: [INR, USD]
 
     Invoice:
       type: object
@@ -978,6 +984,9 @@ components:
           type: string
         clientBusinessName:
           type: ["string", "null"]
+        currency:
+          type: string
+          enum: [INR, USD]
 
     # Files
     FileUploadInput:

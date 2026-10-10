@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, invoicesTable, clientsTable } from "@workspace/db";
+import { db, invoicesTable, clientsTable, projectsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import {
   CreateInvoiceBody,
@@ -15,6 +15,21 @@ import { requireAuth, requireAdmin } from "../lib/auth";
 
 const router: IRouter = Router();
 
+// Due amount and status always follow from the numbers, so they can't be entered inconsistently.
+function settle(total: number, paid: number, dueDate: string) {
+  const due = Math.max(0, Math.round((total - paid) * 100) / 100);
+  const today = new Date().toISOString().slice(0, 10);
+  const status = due === 0 ? "paid" : dueDate < today ? "overdue" : paid > 0 ? "partial" : "due";
+  return { dueAmount: String(due), status };
+}
+
+function checkAmounts(total: number, paid: number): string | null {
+  if (!(total > 0)) return "Total must be more than 0";
+  if (paid < 0) return "Paid amount can't be negative";
+  if (paid > total) return "Paid amount can't be more than the total";
+  return null;
+}
+
 async function formatInvoice(inv: typeof invoicesTable.$inferSelect) {
   const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, inv.clientId));
   return {
@@ -25,9 +40,11 @@ async function formatInvoice(inv: typeof invoicesTable.$inferSelect) {
     totalAmount: parseFloat(inv.totalAmount),
     paidAmount: parseFloat(inv.paidAmount),
     dueAmount: parseFloat(inv.dueAmount),
-    status: inv.status,
+    // Recomputed on read so an unpaid invoice turns overdue when its date passes
+    status: settle(parseFloat(inv.totalAmount), parseFloat(inv.paidAmount), inv.dueDate).status as "paid" | "partial" | "due" | "overdue",
     dueDate: inv.dueDate,
     notes: inv.notes ?? null,
+    currency: inv.currency as "INR" | "USD",
     createdAt: inv.createdAt.toISOString(),
     clientBusinessName: client?.businessName ?? null,
   };
@@ -58,11 +75,31 @@ router.post("/invoices", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
 
+  const { totalAmount, paidAmount, dueDate, projectId, clientId } = parsed.data;
+  const problem = checkAmounts(totalAmount, paidAmount);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, clientId));
+  if (!client) {
+    res.status(400).json({ error: "Client not found" });
+    return;
+  }
+  if (projectId != null) {
+    const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId));
+    if (!project || project.clientId !== clientId) {
+      res.status(400).json({ error: "That project doesn't belong to this client" });
+      return;
+    }
+  }
+
   const [inv] = await db.insert(invoicesTable).values({
     ...parsed.data,
-    totalAmount: String(parsed.data.totalAmount),
-    paidAmount: String(parsed.data.paidAmount),
-    dueAmount: String(parsed.data.dueAmount),
+    currency: parsed.data.currency ?? "INR",
+    totalAmount: String(totalAmount),
+    paidAmount: String(paidAmount),
+    ...settle(totalAmount, paidAmount, dueDate),
   }).returning();
 
   res.status(201).json(CreateInvoiceResponse.parse(await formatInvoice(inv)));
@@ -106,10 +143,25 @@ router.patch("/invoices/:id", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
 
-  const updateData: Record<string, unknown> = { ...parsed.data };
-  if (parsed.data.totalAmount !== undefined) updateData.totalAmount = String(parsed.data.totalAmount);
-  if (parsed.data.paidAmount !== undefined) updateData.paidAmount = String(parsed.data.paidAmount);
-  if (parsed.data.dueAmount !== undefined) updateData.dueAmount = String(parsed.data.dueAmount);
+  const [current] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, params.data.id));
+  if (!current) {
+    res.status(404).json({ error: "Invoice not found" });
+    return;
+  }
+  const total = parsed.data.totalAmount ?? parseFloat(current.totalAmount);
+  const paid = parsed.data.paidAmount ?? parseFloat(current.paidAmount);
+  const problem = checkAmounts(total, paid);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  const { dueAmount: _ignoredDue, status: _ignoredStatus, ...rest } = parsed.data;
+  const updateData: Record<string, unknown> = {
+    ...rest,
+    totalAmount: String(total),
+    paidAmount: String(paid),
+    ...settle(total, paid, parsed.data.dueDate ?? current.dueDate),
+  };
 
   const [inv] = await db
     .update(invoicesTable)

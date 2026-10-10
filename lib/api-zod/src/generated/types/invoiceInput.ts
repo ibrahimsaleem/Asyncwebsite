@@ -5,6 +5,7 @@
  * Aisync API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { InvoiceInputCurrency } from './invoiceInputCurrency';
 import type { InvoiceInputStatus } from './invoiceInputStatus';
 
 export interface InvoiceInput {
@@ -19,4 +20,5 @@ export interface InvoiceInput {
   dueDate: string;
   /** @nullable */
   notes?: string | null;
+  currency?: InvoiceInputCurrency;
 }

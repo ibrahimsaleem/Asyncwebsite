@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useUrlTab } from "@/hooks/use-url-tab";
+import { DualTotal, FxNote, Money } from "@/components/Money";
 import { useAuth } from "@/context/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
 import { motion } from "framer-motion";
@@ -61,6 +62,13 @@ const FR_STATUS: Record<string, string> = {
 
 function frLabel(s: string) {
   return s === "in_review" ? "In Review" : s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// "2026-12-01" is a calendar day: parse it as local, not UTC, or US time zones show the day before
+function calendarDate(value: string, month: "short" | "long" = "short") {
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const d = ymd ? new Date(+ymd[1], +ymd[2] - 1, +ymd[3]) : new Date(value);
+  return d.toLocaleDateString("en-US", { month, day: "numeric", year: "numeric" });
 }
 
 function initials(name: string) {
@@ -275,7 +283,7 @@ export default function ClientDashboard() {
                   },
                   {
                     label: "Balance Due",
-                    value: invoicesLoading ? "…" : (totalDue > 0 ? `$${totalDue.toLocaleString()}` : (invoices ?? []).length === 0 ? "Nothing due" : "Paid up"),
+                    value: invoicesLoading ? "…" : (totalDue > 0 ? <DualTotal items={(invoices ?? []).filter((i) => Number(i.dueAmount) > 0)} amount={(i) => i.dueAmount} /> : (invoices ?? []).length === 0 ? "Nothing due" : "Paid up"),
                     icon: totalDue > 0 ? AlertCircle : CheckCircle2,
                     color: totalDue > 0 ? "text-destructive" : "text-emerald-400",
                     accent: totalDue > 0 ? "bg-destructive/10" : "bg-emerald-500/10",
@@ -350,8 +358,8 @@ export default function ClientDashboard() {
                   </div>
                   <p className="text-sm leading-relaxed">{project.latestUpdate}</p>
                   <div className="flex gap-4 mt-4 text-xs text-muted-foreground">
-                    {project.startDate && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />Started {new Date(project.startDate).toLocaleDateString()}</span>}
-                    {project.expectedCompletionDate && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />Expected {new Date(project.expectedCompletionDate).toLocaleDateString()}</span>}
+                    {project.startDate && <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />Started {calendarDate(project.startDate)}</span>}
+                    {project.expectedCompletionDate && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />Expected {calendarDate(project.expectedCompletionDate)}</span>}
                   </div>
                 </div>
               )}
@@ -390,11 +398,11 @@ export default function ClientDashboard() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-4 border-t border-border/40">
                       <div>
                         <p className="text-muted-foreground text-xs mb-1">Start Date</p>
-                        <p className="font-medium flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-muted-foreground" />{project.startDate ? new Date(project.startDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}</p>
+                        <p className="font-medium flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-muted-foreground" />{project.startDate ? calendarDate(project.startDate, "long") : "—"}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground text-xs mb-1">Expected Completion</p>
-                        <p className="font-medium flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-muted-foreground" />{project.expectedCompletionDate ? new Date(project.expectedCompletionDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}</p>
+                        <p className="font-medium flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-muted-foreground" />{project.expectedCompletionDate ? calendarDate(project.expectedCompletionDate, "long") : "—"}</p>
                       </div>
                     </div>
                     {project.latestUpdate && (
@@ -528,19 +536,20 @@ export default function ClientDashboard() {
               <div className="mb-6">
                 <h1 className="text-2xl font-bold">Invoices</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">Your billing history and payment status.</p>
+                <div className="mt-1"><FxNote /></div>
               </div>
 
               {/* Summary totals */}
               {(invoices ?? []).length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {[
-                    { label: "Total Billed", value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.totalAmount)), 0), color: "text-foreground" },
-                    { label: "Paid",         value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.paidAmount)), 0),  color: "text-emerald-400" },
-                    { label: "Outstanding",  value: (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0),   color: totalDue > 0 ? "text-destructive" : "text-emerald-400" },
+                    { label: "Total Billed", value: <DualTotal items={invoices ?? []} amount={(i) => i.totalAmount} />, color: "text-foreground" },
+                    { label: "Paid",         value: <DualTotal items={invoices ?? []} amount={(i) => i.paidAmount} />,  color: "text-emerald-400" },
+                    { label: "Outstanding",  value: <DualTotal items={invoices ?? []} amount={(i) => i.dueAmount} />,   color: totalDue > 0 ? "text-red-400" : "text-emerald-400" },
                   ].map((s) => (
                     <div key={s.label} className="glass glass-hover rounded-xl p-4">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{s.label}</p>
-                      <p className={`text-2xl font-bold ${s.color}`}>${s.value.toLocaleString()}</p>
+                      <p className={`text-2xl font-bold tabular-nums ${s.color}`}>{s.value}</p>
                     </div>
                   ))}
                 </div>
@@ -557,27 +566,27 @@ export default function ClientDashboard() {
                       <div key={inv.id} className="glass glass-hover rounded-2xl p-6">
                         <div className="flex items-start justify-between gap-4 mb-5">
                           <div>
-                            <p className="font-bold text-sm">Invoice #{inv.id}</p>
+                            <p className="font-bold text-sm">Invoice {inv.invoiceNumber}</p>
                             {inv.notes && <p className="text-xs text-muted-foreground mt-0.5">{inv.notes}</p>}
                           </div>
                           <div className="text-right">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${INVOICE_STATUS[inv.status] ?? "bg-secondary text-muted-foreground"}`}>{inv.status}</span>
-                            {inv.dueDate && <p className="text-xs text-muted-foreground mt-1">Due {new Date(inv.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>}
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${INVOICE_STATUS[inv.status] ?? "bg-secondary text-muted-foreground"}`}>{inv.status}</span>
+                            {inv.dueDate && <p className="text-xs text-muted-foreground mt-1">Due {calendarDate(inv.dueDate)}</p>}
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5 text-sm">
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Total</p>
-                            <p className="text-xl font-bold">${total.toLocaleString()}</p>
+                            <p className="text-xl font-bold tabular-nums"><Money value={total} currency={inv.currency} /></p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Paid</p>
-                            <p className="text-xl font-bold text-emerald-400">${paid.toLocaleString()}</p>
+                            <p className="text-xl font-bold tabular-nums text-emerald-400"><Money value={paid} currency={inv.currency} /></p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Remaining</p>
-                            <p className={`text-xl font-bold ${due > 0 ? "text-destructive" : "text-emerald-400"}`}>${due.toLocaleString()}</p>
+                            <p className={`text-xl font-bold tabular-nums ${due > 0 ? "text-red-400" : "text-emerald-400"}`}><Money value={due} currency={inv.currency} /></p>
                           </div>
                         </div>
 

@@ -10,6 +10,7 @@ import filesRouter from "./files";
 import featureRequestsRouter from "./featureRequests";
 import dashboardRouter from "./dashboard";
 import projectTrackingRouter from "./projectTracking";
+import fxRouter from "./fx";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(filesRouter);
 router.use(featureRequestsRouter);
 router.use(dashboardRouter);
 router.use(projectTrackingRouter);
+router.use(fxRouter);
 
 export default router;

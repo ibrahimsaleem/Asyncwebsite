@@ -5,6 +5,7 @@
  * Aisync API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { InvoiceUpdateCurrency } from './invoiceUpdateCurrency';
 import type { InvoiceUpdateStatus } from './invoiceUpdateStatus';
 
 export interface InvoiceUpdate {
@@ -16,4 +17,5 @@ export interface InvoiceUpdate {
   dueDate?: string;
   /** @nullable */
   notes?: string | null;
+  currency?: InvoiceUpdateCurrency;
 }

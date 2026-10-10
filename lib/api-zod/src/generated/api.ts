@@ -470,7 +470,8 @@ export const ListInvoicesResponseItem = zod.object({
   "dueDate": zod.string(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "currency": zod.enum(['INR', 'USD']).optional()
 })
 export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem)
 
@@ -487,7 +488,8 @@ export const CreateInvoiceBody = zod.object({
   "dueAmount": zod.number(),
   "status": zod.enum(['paid', 'partial', 'due', 'overdue']),
   "dueDate": zod.string(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "currency": zod.enum(['INR', 'USD']).optional()
 })
 
 export const CreateInvoiceResponse = zod.object({
@@ -502,7 +504,8 @@ export const CreateInvoiceResponse = zod.object({
   "dueDate": zod.string(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "currency": zod.enum(['INR', 'USD']).optional()
 })
 
 
@@ -525,7 +528,8 @@ export const GetInvoiceResponse = zod.object({
   "dueDate": zod.string(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "currency": zod.enum(['INR', 'USD']).optional()
 })
 
 
@@ -543,7 +547,8 @@ export const UpdateInvoiceBody = zod.object({
   "dueAmount": zod.number().optional(),
   "status": zod.enum(['paid', 'partial', 'due', 'overdue']).optional(),
   "dueDate": zod.string().optional(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "currency": zod.enum(['INR', 'USD']).optional()
 })
 
 export const UpdateInvoiceResponse = zod.object({
@@ -558,7 +563,8 @@ export const UpdateInvoiceResponse = zod.object({
   "dueDate": zod.string(),
   "notes": zod.string().nullish(),
   "createdAt": zod.string(),
-  "clientBusinessName": zod.string().nullish()
+  "clientBusinessName": zod.string().nullish(),
+  "currency": zod.enum(['INR', 'USD']).optional()
 })
 
 
