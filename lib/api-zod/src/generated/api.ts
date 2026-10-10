@@ -252,7 +252,8 @@ export const ListProjectsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })).optional()
 })
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
@@ -285,7 +286,8 @@ export const CreateProjectResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })).optional()
 })
 
@@ -311,7 +313,8 @@ export const GetProjectResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })).optional()
 })
 
@@ -346,7 +349,8 @@ export const UpdateProjectResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })).optional()
 })
 
@@ -386,7 +390,8 @@ export const ListEmployeesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })
 export const ListEmployeesResponse = zod.array(ListEmployeesResponseItem)
 
@@ -397,14 +402,16 @@ export const ListEmployeesResponse = zod.array(ListEmployeesResponseItem)
 export const CreateEmployeeBody = zod.object({
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })
 
 export const CreateEmployeeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })
 
 
@@ -418,14 +425,16 @@ export const UpdateEmployeeParams = zod.object({
 export const UpdateEmployeeBody = zod.object({
   "name": zod.string().optional(),
   "role": zod.string().optional(),
-  "email": zod.string().optional()
+  "email": zod.string().optional(),
+  "phone": zod.string().nullish()
 })
 
 export const UpdateEmployeeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "role": zod.string(),
-  "email": zod.string()
+  "email": zod.string(),
+  "phone": zod.string().nullish()
 })
 
 

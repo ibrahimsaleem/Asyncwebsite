@@ -10,4 +10,6 @@ export interface EmployeeUpdate {
   name?: string;
   role?: string;
   email?: string;
+  /** @nullable */
+  phone?: string | null;
 }

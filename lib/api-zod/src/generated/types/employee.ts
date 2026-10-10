@@ -11,4 +11,6 @@ export interface Employee {
   name: string;
   role: string;
   email: string;
+  /** @nullable */
+  phone?: string | null;
 }

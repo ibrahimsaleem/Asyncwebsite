@@ -45,7 +45,7 @@ async function buildProjectWithDetails(project: typeof projectsTable.$inferSelec
     expectedCompletionDate: project.expectedCompletionDate ?? null,
     latestUpdate: project.latestUpdate ?? null,
     clientBusinessName: client?.businessName ?? "",
-    employees: employees.map((e) => ({ id: e.id, name: e.name, role: e.role, email: e.email })),
+    employees: employees.map((e) => ({ id: e.id, name: e.name, role: e.role, email: e.email, phone: e.phone ?? null })),
   };
 }
 

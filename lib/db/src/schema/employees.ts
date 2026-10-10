@@ -7,6 +7,7 @@ export const employeesTable = pgTable("employees", {
   name: text("name").notNull(),
   role: text("role").notNull(),
   email: text("email").notNull(),
+  phone: text("phone"), // shown to clients on projects this person is assigned to
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

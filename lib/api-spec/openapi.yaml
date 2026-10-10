@@ -837,6 +837,8 @@ components:
           type: string
         email:
           type: string
+        phone:
+          type: ["string", "null"]
 
     ProjectWithDetails:
       type: object
@@ -884,6 +886,8 @@ components:
           type: string
         email:
           type: string
+        phone:
+          type: ["string", "null"]
 
     EmployeeUpdate:
       type: object
@@ -894,6 +898,8 @@ components:
           type: string
         email:
           type: string
+        phone:
+          type: ["string", "null"]
 
     # Invoices
     InvoiceInput:

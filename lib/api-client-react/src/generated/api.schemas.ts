@@ -158,6 +158,8 @@ export interface Employee {
   name: string;
   role: string;
   email: string;
+  /** @nullable */
+  phone?: string | null;
 }
 
 export type ProjectWithDetailsStatus = typeof ProjectWithDetailsStatus[keyof typeof ProjectWithDetailsStatus];
@@ -195,12 +197,16 @@ export interface EmployeeInput {
   name: string;
   role: string;
   email: string;
+  /** @nullable */
+  phone?: string | null;
 }
 
 export interface EmployeeUpdate {
   name?: string;
   role?: string;
   email?: string;
+  /** @nullable */
+  phone?: string | null;
 }
 
 export type InvoiceInputStatus = typeof InvoiceInputStatus[keyof typeof InvoiceInputStatus];

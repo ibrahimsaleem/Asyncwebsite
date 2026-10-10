@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, KeyRound, ShieldCheck } from "lucide-react";
-import { getListProjectsQueryKey, useAssignEmployee, useUnassignEmployee } from "@workspace/api-client-react";
+import { Check, KeyRound, Pencil, ShieldCheck } from "lucide-react";
+import { getListEmployeesQueryKey, getListProjectsQueryKey, useAssignEmployee, useUnassignEmployee, useUpdateEmployee } from "@workspace/api-client-react";
 
-type Member = { id: number; name: string; role: string; email: string };
+type Member = { id: number; name: string; role: string; email: string; phone?: string | null };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { credentials: "include", headers: init?.body ? { "Content-Type": "application/json" } : undefined, ...init });
@@ -21,6 +21,56 @@ function randomPassword() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
   const bytes = crypto.getRandomValues(new Uint8Array(14));
   return "AIC-" + Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
+// On a team member card: edit name, role, email and phone.
+export function EditMemberControl({ member }: { member: Member }) {
+  const qc = useQueryClient();
+  const update = useUpdateEmployee();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ name: member.name, role: member.role, email: member.email, phone: member.phone ?? "" });
+  const [error, setError] = useState("");
+  const field = "w-full min-w-0 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/50";
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    try {
+      await update.mutateAsync({ id: member.id, data: { ...form, phone: form.phone.trim() || null } });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: getListEmployeesQueryKey() }),
+        qc.invalidateQueries({ queryKey: getListProjectsQueryKey() }),
+      ]);
+      setOpen(false);
+    } catch (err) { setError(err instanceof Error ? err.message : "Couldn't save"); }
+  }
+
+  if (!open) {
+    return (
+      <button type="button" onClick={() => { setForm({ name: member.name, role: member.role, email: member.email, phone: member.phone ?? "" }); setOpen(true); }}
+        className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+        <Pencil className="w-3 h-3" aria-hidden /> Edit
+      </button>
+    );
+  }
+  return (
+    <form onSubmit={save} className="mt-3 space-y-2">
+      {(["name", "role", "email", "phone"] as const).map((k) => (
+        <label key={k} className="block">
+          <span className="block text-[11px] text-muted-foreground mb-0.5 capitalize">{k}</span>
+          <input value={form[k]} required={k !== "phone"} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))}
+            type={k === "email" ? "email" : k === "phone" ? "tel" : "text"} placeholder={k === "phone" ? "+91 98765 43210" : undefined} className={field} />
+        </label>
+      ))}
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
+      <div className="flex gap-2">
+        <button type="submit" disabled={update.isPending} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold disabled:opacity-50">
+          {update.isPending ? "Saving…" : "Save"}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} className="px-3 py-1.5 border border-border rounded-lg text-xs">Cancel</button>
+      </div>
+    </form>
+  );
 }
 
 // On a team member card: shows whether they can sign in to the admin panel, and lets you give or remove that.

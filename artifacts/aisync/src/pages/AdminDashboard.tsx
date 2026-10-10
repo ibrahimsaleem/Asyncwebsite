@@ -4,7 +4,7 @@ import AmbientBackground from "@/components/AmbientBackground";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { MilestoneChecklist, ProjectTimeline, QuestionsPanel } from "@/components/ProjectTracking";
-import { AdminLoginControl, ProjectTeamPicker } from "@/components/AdminTeamTools";
+import { AdminLoginControl, EditMemberControl, ProjectTeamPicker } from "@/components/AdminTeamTools";
 
 import {
   useGetAdminSummary, useListClients, useListProjects, useListEmployees,
@@ -219,6 +219,7 @@ export default function AdminDashboard() {
   const [newEmpName, setNewEmpName] = useState("");
   const [newEmpRole, setNewEmpRole] = useState("");
   const [newEmpEmail, setNewEmpEmail] = useState("");
+  const [newEmpPhone, setNewEmpPhone] = useState("");
   const [addingEmp, setAddingEmp] = useState(false);
   const [showEmpForm, setShowEmpForm] = useState(false);
   const [removingEmpId, setRemovingEmpId] = useState<number | null>(null);
@@ -332,8 +333,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     setAddingEmp(true);
     try {
-      await createEmployee.mutateAsync({ data: { name: newEmpName, role: newEmpRole, email: newEmpEmail } });
-      setNewEmpName(""); setNewEmpRole(""); setNewEmpEmail(""); setShowEmpForm(false);
+      await createEmployee.mutateAsync({ data: { name: newEmpName, role: newEmpRole, email: newEmpEmail, phone: newEmpPhone.trim() || null } });
+      setNewEmpName(""); setNewEmpRole(""); setNewEmpEmail(""); setNewEmpPhone(""); setShowEmpForm(false);
       qc.invalidateQueries({ queryKey: getListEmployeesQueryKey() });
       toast({ title: "Team member added", description: newEmpName });
     } catch (err) {
@@ -899,7 +900,7 @@ export default function AdminDashboard() {
               {showEmpForm && (
                 <form onSubmit={handleAddEmployee} className="glass rounded-2xl p-5 sm:p-6 mb-6">
                   <h3 className="font-semibold text-sm mb-5">New team member</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Full name *">
                       <input required value={newEmpName} onChange={(e) => setNewEmpName(e.target.value)} placeholder="Alex Johnson" className={INPUT} />
                     </Field>
@@ -908,6 +909,9 @@ export default function AdminDashboard() {
                     </Field>
                     <Field label="Email *">
                       <input required value={newEmpEmail} onChange={(e) => setNewEmpEmail(e.target.value)} placeholder="alex@aicronics.com" type="email" className={INPUT} />
+                    </Field>
+                    <Field label="Phone" hint="Clients see this on projects this person is assigned to.">
+                      <input value={newEmpPhone} onChange={(e) => setNewEmpPhone(e.target.value)} placeholder="+91 98765 43210" type="tel" inputMode="tel" className={INPUT} />
                     </Field>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-5">
@@ -932,9 +936,15 @@ export default function AdminDashboard() {
                         <p className="font-semibold text-sm truncate">{emp.name}</p>
                         <p className="text-xs text-primary/80 font-medium truncate">{emp.role}</p>
                         <a href={`mailto:${emp.email}`} className="block text-xs text-muted-foreground hover:text-primary mt-1 truncate">{emp.email}</a>
+                        {emp.phone ? (
+                          <a href={`tel:${emp.phone.replace(/[^\d+]/g, "")}`} className="block text-xs text-muted-foreground hover:text-primary truncate">{emp.phone}</a>
+                        ) : (
+                          <p className="text-xs text-amber-400/80">No phone yet. Use Edit to add one.</p>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {projectCount > 0 ? `Assigned to ${plural(projectCount, "project")}` : "Not assigned to a project"}
                         </p>
+                        <EditMemberControl member={emp} />
                         <AdminLoginControl member={emp} />
                       </div>
                       <button

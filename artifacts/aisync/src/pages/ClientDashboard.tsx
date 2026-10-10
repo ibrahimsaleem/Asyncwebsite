@@ -455,24 +455,39 @@ export default function ClientDashboard() {
                   {/* Team */}
                   {project.employees && project.employees.length > 0 && (
                     <div className="glass glass-hover rounded-2xl p-6">
-                      <h3 className="font-semibold mb-4">Your Dedicated Team</h3>
+                      <h3 className="font-semibold mb-1">Your Dedicated Team</h3>
+                      <p className="text-xs text-muted-foreground mb-4">Reach any of us directly.</p>
                       <div className="grid sm:grid-cols-2 gap-3">
-                        {project.employees.map((emp) => (
-                          <div key={emp.id} className="flex items-center gap-3 bg-secondary/30 rounded-xl p-3">
+                        {project.employees.map((emp) => {
+                          const digits = emp.phone?.replace(/[^\d+]/g, "") ?? "";
+                          return (
+                          <div key={emp.id} className="flex items-start gap-3 bg-secondary/30 rounded-xl p-3">
                             <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                               {initials(emp.name)}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold truncate">{emp.name}</p>
                               <p className="text-xs text-primary/80">{emp.role}</p>
                               {emp.email && (
-                                <a href={`mailto:${emp.email}`} className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 mt-0.5">
-                                  <Mail className="w-3 h-3" /> {emp.email}
+                                <a href={`mailto:${emp.email}`} className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 mt-1.5 min-w-0">
+                                  <Mail className="w-3.5 h-3.5 shrink-0" aria-hidden /> <span className="truncate select-text">{emp.email}</span>
                                 </a>
+                              )}
+                              {emp.phone && (
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                                  <a href={`tel:${digits}`} className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                                    <Phone className="w-3.5 h-3.5 shrink-0" aria-hidden /> <span className="select-text">{emp.phone}</span>
+                                  </a>
+                                  <a href={`https://wa.me/${digits.replace(/^\+/, "")}`} target="_blank" rel="noreferrer"
+                                    className="text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                                    WhatsApp
+                                  </a>
+                                </div>
                               )}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -10,4 +10,6 @@ export interface EmployeeInput {
   name: string;
   role: string;
   email: string;
+  /** @nullable */
+  phone?: string | null;
 }
