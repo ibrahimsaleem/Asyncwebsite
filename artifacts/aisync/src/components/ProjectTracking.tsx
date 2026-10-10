@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Circle, Trash2 } from "lucide-react";
 
@@ -123,8 +123,9 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
   const [newSection, setNewSection] = useState("");
   const [newQuestions, setNewQuestions] = useState("");
 
+  // Keep what the user is typing; only fill in questions we haven't seen yet.
   useEffect(() => {
-    setDraft(Object.fromEntries(questions.map((q) => [q.id, q.answer ?? ""])));
+    setDraft((prev) => Object.fromEntries(questions.map((q) => [q.id, prev[q.id] ?? q.answer ?? ""])));
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sections = useMemo(() => {
@@ -135,10 +136,46 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
 
   const refresh = () => qc.invalidateQueries({ queryKey: trackingKey(projectId) });
   const save = useMutation({
-    mutationFn: () => api(`/api/projects/${projectId}/answers`, { method: "PUT", body: JSON.stringify({ answers: draft }) }),
-    onSuccess: () => { refresh(); setSaved(`Saved at ${new Date().toLocaleTimeString()}`); },
-    onError: (e: Error) => setSaved(`Couldn't save: ${e.message}`),
+    mutationFn: (answers: Record<number, string>) =>
+      api(`/api/projects/${projectId}/answers`, { method: "PUT", body: JSON.stringify({ answers }) }),
+    onSuccess: () => { refresh(); setSaved(`All changes saved · ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`); },
+    onError: (e: Error) => setSaved(`Couldn't save: ${e.message}. Your answers are still here; we'll retry when you make a change.`),
   });
+
+  // Autosave: one second after the last change, send only the answers that changed.
+  const changed = useRef(new Set<number>());
+  const edit = (id: number, value: string) => {
+    changed.current.add(id);
+    setSaved("Saving…");
+    setDraft((d) => ({ ...d, [id]: value }));
+  };
+  useEffect(() => {
+    if (changed.current.size === 0) return;
+    const t = setTimeout(() => {
+      const answers = Object.fromEntries([...changed.current].map((id) => [id, draft[id] ?? ""]));
+      changed.current.clear();
+      // On failure, queue them again so the next change retries them
+      save.mutate(answers, { onError: () => Object.keys(answers).forEach((id) => changed.current.add(Number(id))) });
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Leaving the tab or page within that second still saves the last change.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  useEffect(() => {
+    const flush = () => {
+      if (changed.current.size === 0) return;
+      const answers = Object.fromEntries([...changed.current].map((id) => [id, draftRef.current[id] ?? ""]));
+      changed.current.clear();
+      fetch(`/api/projects/${projectId}/answers`, {
+        method: "PUT", credentials: "include", keepalive: true,
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }),
+      });
+    };
+    window.addEventListener("pagehide", flush);
+    return () => { window.removeEventListener("pagehide", flush); flush(); };
+  }, [projectId]);
   const add = useMutation({
     mutationFn: () => api(`/api/projects/${projectId}/questions`, { method: "POST", body: JSON.stringify({ section: newSection, questions: newQuestions }) }),
     onSuccess: () => { refresh(); setNewQuestions(""); },
@@ -157,18 +194,12 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
         <div>
           <p className="font-semibold">{answered} of {questions.length} answered</p>
           <p className="text-xs text-muted-foreground">
-            {isAdmin ? "The client answers these in their portal. You can also fill answers in for them." : "Short answers are fine. Write “TBD” if you don't know yet. You can save and come back later."}
+            {isAdmin
+              ? "The client answers these in their portal. You can also fill answers in for them. Changes save automatically."
+              : "Every question is optional. Skip anything you're not sure about and come back any time. Your answers save automatically."}
           </p>
         </div>
-        {questions.length > 0 && (
-          <div className="flex items-center gap-3">
-            {saved && <span className="text-xs text-muted-foreground" role="status">{saved}</span>}
-            <button type="button" onClick={() => save.mutate()} disabled={save.isPending}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-              {save.isPending ? "Saving…" : "Save answers"}
-            </button>
-          </div>
-        )}
+        {saved && <span className="text-xs text-muted-foreground" role="status" aria-live="polite">{saved}</span>}
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading questions…</p>}
@@ -183,7 +214,7 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
             {qs.map((q) => (
               <div key={q.id}>
                 <div className="flex items-start justify-between gap-3 mb-1.5">
-                  <label htmlFor={`q-${q.id}`} className="text-sm font-medium">{q.question}</label>
+                  <label htmlFor={`q-${q.id}`} className="text-sm font-medium">{q.question} <span className="text-xs font-normal text-muted-foreground">(optional)</span></label>
                   {isAdmin && (
                     <button type="button" onClick={() => remove.mutate(q.id)} aria-label="Delete question"
                       className="text-muted-foreground hover:text-destructive shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -195,7 +226,7 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                       const on = parts(draft[q.id] ?? "").includes(opt);
                       return (
                         <button key={opt} type="button" aria-pressed={on}
-                          onClick={() => setDraft((d) => ({ ...d, [q.id]: toggleOption(d[q.id] ?? "", opt) }))}
+                          onClick={() => edit(q.id, toggleOption(draft[q.id] ?? "", opt))}
                           className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${on ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground/80 hover:bg-secondary"}`}>
                           {opt}
                         </button>
@@ -205,7 +236,7 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                 )}
                 <textarea id={`q-${q.id}`} rows={2} value={draft[q.id] ?? ""} className={`${input} resize-y`}
                   placeholder={q.options?.length ? "Pick one or more above, or type your own answer" : "Your answer"}
-                  onChange={(e) => setDraft((d) => ({ ...d, [q.id]: e.target.value }))} />
+                  onChange={(e) => edit(q.id, e.target.value)} />
               </div>
             ))}
           </div>
