@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, MotionConfig } from "framer-motion";
-import { Check, CheckCircle2, Circle, Trash2 } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, Circle, Trash2 } from "lucide-react";
 
 // Timeline, milestone checklist and onboarding questions for one project.
 // These endpoints live outside the OpenAPI spec, so they use plain fetch.
@@ -155,6 +155,7 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
   const [saved, setSaved] = useState("");
   const [newSection, setNewSection] = useState("");
   const [newQuestions, setNewQuestions] = useState("");
+  const [open, setOpen] = useState<Set<string> | null>(null);
 
   // Keep what the user is typing; only fill in questions we haven't seen yet.
   useEffect(() => {
@@ -166,6 +167,21 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
     for (const q of questions) map.set(q.section, [...(map.get(q.section) ?? []), q]);
     return [...map.entries()];
   }, [questions]);
+
+  // Start with the first section that still has unanswered questions open; the rest collapsed.
+  useEffect(() => {
+    if (open !== null || sections.length === 0) return;
+    const first = sections.find(([, qs]) => qs.some((q) => !q.answer)) ?? sections[0];
+    setOpen(new Set([first[0]]));
+  }, [sections]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isOpen = (section: string) => open?.has(section) ?? false;
+  const toggleSection = (section: string, force?: boolean) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (force ?? !next.has(section)) next.add(section); else next.delete(section);
+      return next;
+    });
+  const allOpen = sections.length > 0 && sections.every(([s]) => isOpen(s));
 
   const refresh = () => qc.invalidateQueries({ queryKey: trackingKey(projectId) });
   const save = useMutation({
@@ -248,13 +264,14 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
             initial={false} animate={{ width: `${pct}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
         </div>
         {sections.length > 1 && (
-          <nav aria-label="Jump to section" className="flex gap-2 overflow-x-auto mt-4 -mx-1 px-1 pb-1">
+          <div className="flex items-center gap-2 mt-4">
+          <nav aria-label="Jump to section" className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 flex-1 min-w-0">
             {sections.map(([section, qs], i) => {
               const c = PALETTE[i % PALETTE.length];
               const { letter, title } = splitSection(section, i);
               const done = qs.filter(hasAnswer).length;
               return (
-                <a key={section} href={`#sec-${i}`}
+                <a key={section} href={`#sec-${i}`} onClick={() => toggleSection(section, true)}
                   className={`shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${c.pill}`}>
                   <span className={`w-5 h-5 rounded-full grid place-items-center text-[10px] font-bold ${done === qs.length ? "bg-emerald-500 text-white" : c.badge}`}>
                     {done === qs.length ? <Check className="w-3 h-3" aria-hidden /> : letter}
@@ -265,6 +282,11 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
               );
             })}
           </nav>
+          <button type="button" onClick={() => setOpen(allOpen ? new Set() : new Set(sections.map(([s]) => s)))}
+            className="shrink-0 text-xs font-semibold px-3 py-1.5 mb-1 rounded-full border border-border hover:bg-secondary transition-colors">
+            {allOpen ? "Collapse all" : "Expand all"}
+          </button>
+          </div>
         )}
       </div>
 
@@ -277,24 +299,33 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
         const c = PALETTE[i % PALETTE.length];
         const { letter, title } = splitSection(section, i);
         const done = qs.filter(hasAnswer).length;
+        const firstN = n;
+        n += qs.length; // keep numbering right even when a section is collapsed
+        const expanded = isOpen(section);
         return (
           <section key={section} id={`sec-${i}`} className="glass rounded-2xl overflow-hidden scroll-mt-48">
-            <header className={`flex items-center gap-3 px-5 sm:px-6 py-4 ${c.header}`}>
-              <span className={`w-9 h-9 rounded-xl grid place-items-center text-sm font-bold shrink-0 ${c.badge}`}>{letter}</span>
-              <h3 className="font-semibold flex-1 min-w-0">{title}</h3>
-              <span className={`text-xs font-semibold tabular-nums px-2.5 py-1 rounded-full ${done === qs.length ? "bg-emerald-500/20 text-emerald-300" : "bg-black/20 text-foreground/80"}`}>
-                {done}/{qs.length}
-              </span>
-            </header>
-            <div className="p-4 sm:p-5 space-y-3">
-              {qs.map((q) => {
-                n += 1;
+            <h3>
+              <button type="button" onClick={() => toggleSection(section)} aria-expanded={expanded} aria-controls={`sec-body-${i}`}
+                className={`w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left transition-colors hover:brightness-125 ${c.header}`}>
+                <span className={`w-9 h-9 rounded-xl grid place-items-center text-sm font-bold shrink-0 ${c.badge}`}>{letter}</span>
+                <span className="font-semibold flex-1 min-w-0">{title}</span>
+                <span className={`text-xs font-semibold tabular-nums px-2.5 py-1 rounded-full ${done === qs.length ? "bg-emerald-500/20 text-emerald-300" : "bg-black/20 text-foreground/80"}`}>
+                  {done}/{qs.length}
+                </span>
+                <ChevronDown aria-hidden className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+              </button>
+            </h3>
+            {expanded && (
+            <motion.div id={`sec-body-${i}`} className="p-4 sm:p-5 space-y-3"
+              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: "easeOut" }}>
+              {qs.map((q, j) => {
+                const num = firstN + j + 1;
                 const ok = hasAnswer(q);
                 return (
                   <div key={q.id} className={`rounded-xl border p-4 transition-colors ${ok ? c.answered : "border-border/60 bg-background/30"}`}>
                     <div className="flex items-start gap-3 mb-3">
                       <span className={`mt-0.5 w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold shrink-0 transition-colors ${ok ? "bg-emerald-500 text-white" : "bg-secondary text-muted-foreground"}`}>
-                        {ok ? <Check className="w-3.5 h-3.5" aria-label="Answered" /> : n}
+                        {ok ? <Check className="w-3.5 h-3.5" aria-label="Answered" /> : num}
                       </span>
                       <label htmlFor={`q-${q.id}`} className="text-sm font-medium leading-snug flex-1">{q.question}</label>
                       {isAdmin && (
@@ -331,7 +362,8 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                   </div>
                 );
               })}
-            </div>
+            </motion.div>
+            )}
           </section>
         );
       }); })()}
