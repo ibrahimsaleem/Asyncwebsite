@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { MilestoneChecklist, ProjectTimeline, QuestionsPanel } from "@/components/ProjectTracking";
 
 import {
   useGetAdminSummary, useListClients, useListProjects, useListEmployees,
@@ -245,6 +246,7 @@ export default function AdminDashboard() {
 
   // Inline "post an update to the client" editor on the Projects tab
   const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
+  const [trackingProjectId, setTrackingProjectId] = useState<number | null>(null);
   const [editStatus, setEditStatus] = useState<string>("onboarding");
   const [editUpdate, setEditUpdate] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -789,11 +791,16 @@ export default function AdminDashboard() {
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
                         </div>
-                        {!isEditing && (
-                          <button onClick={() => startEditProject(p)} className="shrink-0 px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-semibold hover:bg-primary/25 transition-colors">
-                            Post update
+                        <div className="shrink-0 flex flex-wrap justify-end gap-2">
+                          <button onClick={() => setTrackingProjectId(trackingProjectId === p.id ? null : p.id)} className="px-3 py-1.5 border border-border rounded-lg text-xs font-semibold hover:bg-secondary transition-colors">
+                            {trackingProjectId === p.id ? "Hide checklist & questions" : "Checklist & questions"}
                           </button>
-                        )}
+                          {!isEditing && (
+                            <button onClick={() => startEditProject(p)} className="px-3 py-1.5 bg-primary/15 text-primary rounded-lg text-xs font-semibold hover:bg-primary/25 transition-colors">
+                              Post update
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {isEditing && (
                         <form onSubmit={handleSaveProject} className="mb-4 p-4 bg-background/60 border border-border rounded-xl">
@@ -854,6 +861,15 @@ export default function AdminDashboard() {
                       {p.latestUpdate && !isEditing && (
                         <div className="mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground">
                           <span className="font-semibold text-foreground">Latest update: </span>{p.latestUpdate}
+                        </div>
+                      )}
+                      {trackingProjectId === p.id && (
+                        <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
+                          <div className="grid lg:grid-cols-2 gap-4 items-start">
+                            <MilestoneChecklist projectId={p.id} isAdmin />
+                            <ProjectTimeline projectId={p.id} />
+                          </div>
+                          <QuestionsPanel projectId={p.id} isAdmin />
                         </div>
                       )}
                     </div>

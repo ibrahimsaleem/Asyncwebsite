@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcrypt";
-import { db, usersTable, clientsTable, projectsTable, featureRequestsTable } from "@workspace/db";
+import { db, usersTable, clientsTable, projectsTable, featureRequestsTable, projectUpdatesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { LoginBody, RegisterBody, GetMeResponse } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
@@ -81,6 +81,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
         latestUpdate: "Request received! Our team will review your needs and contact you within 1 business day to schedule your free consultation.",
       })
       .returning();
+    await tx.insert(projectUpdatesTable).values({ projectId: project.id, message: project.latestUpdate! });
     await tx.insert(featureRequestsTable).values({
       clientId: client.id,
       projectId: project.id,

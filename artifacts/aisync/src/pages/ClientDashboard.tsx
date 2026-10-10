@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import AmbientBackground from "@/components/AmbientBackground";
 import { motion } from "framer-motion";
+import { MilestoneChecklist, ProjectTimeline, QuestionsPanel, useProjectTracking } from "@/components/ProjectTracking";
 
 import {
   useGetMyClient,
@@ -24,10 +25,10 @@ import {
   LayoutDashboard, FolderKanban, Receipt, FileText, Lightbulb,
   LogOut, TrendingUp, CheckCircle2, Clock, AlertCircle, Users,
   Calendar, Upload, Trash2, ExternalLink, Send, MessageSquare,
-  Building2, Phone, Mail, Menu,
+  Building2, Phone, Mail, Menu, ListChecks,
 } from "lucide-react";
 
-type Tab = "overview" | "project" | "invoices" | "files" | "requests";
+type Tab = "overview" | "project" | "questions" | "invoices" | "files" | "requests";
 
 const STAGES: { label: string; key: string }[] = [
   { label: "Onboarding",  key: "onboarding" },
@@ -97,6 +98,8 @@ export default function ClientDashboard() {
   const deleteFile = useDeleteFile();
 
   const project = projects?.[0];
+  const { data: tracking } = useProjectTracking(project?.id);
+  const unanswered = (tracking?.questions ?? []).filter((q) => !q.answer).length;
   const si = stageIndex(project?.status ?? "onboarding");
 
   const totalDue = (invoices ?? []).reduce((s, i) => s + parseFloat(String(i.dueAmount)), 0);
@@ -136,6 +139,7 @@ export default function ClientDashboard() {
   const navItems: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: "overview",  label: "Overview",  icon: LayoutDashboard },
     { id: "project",   label: "Project",   icon: FolderKanban },
+    { id: "questions", label: "Questions", icon: ListChecks },
     { id: "invoices",  label: "Invoices",  icon: Receipt },
     { id: "files",     label: "Files",     icon: FileText },
     { id: "requests",  label: "Requests",  icon: Lightbulb },
@@ -217,6 +221,9 @@ export default function ClientDashboard() {
                 {item.label}
                 {item.id === "requests" && openRequests > 0 && (
                   <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{openRequests}</span>
+                )}
+                {item.id === "questions" && unanswered > 0 && (
+                  <span className="ml-auto bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full" title={`${unanswered} unanswered`}>{unanswered}</span>
                 )}
               </button>
             );
@@ -442,6 +449,9 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
+                  <MilestoneChecklist projectId={project.id} />
+                  <ProjectTimeline projectId={project.id} />
+
                   {/* Team */}
                   {project.employees && project.employees.length > 0 && (
                     <div className="glass glass-hover rounded-2xl p-6">
@@ -477,6 +487,16 @@ export default function ClientDashboard() {
           )}
 
           {/* ── INVOICES ─────────────────────────────────────────────────── */}
+          {tab === "questions" && (
+            <div>
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold">Questions for you</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">Your answers help us build your voice assistant and prepare your proposal.</p>
+              </div>
+              {project ? <QuestionsPanel projectId={project.id} /> : <p className="text-sm text-muted-foreground">No project yet.</p>}
+            </div>
+          )}
+
           {tab === "invoices" && (
             <div>
               <div className="mb-6">

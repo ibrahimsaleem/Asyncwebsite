@@ -9,6 +9,7 @@ import invoicesRouter from "./invoices";
 import filesRouter from "./files";
 import featureRequestsRouter from "./featureRequests";
 import dashboardRouter from "./dashboard";
+import projectTrackingRouter from "./projectTracking";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(invoicesRouter);
 router.use(filesRouter);
 router.use(featureRequestsRouter);
 router.use(dashboardRouter);
+router.use(projectTrackingRouter);
 
 export default router;

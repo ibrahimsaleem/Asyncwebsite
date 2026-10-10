@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, projectsTable, projectAssignmentsTable, employeesTable, clientsTable } from "@workspace/db";
+import { db, projectsTable, projectAssignmentsTable, employeesTable, clientsTable, projectUpdatesTable } from "@workspace/db";
 import { eq, inArray, and } from "drizzle-orm";
 import {
   CreateProjectBody,
@@ -76,6 +76,9 @@ router.post("/projects", requireAdmin, async (req, res): Promise<void> => {
   }
 
   const [project] = await db.insert(projectsTable).values(parsed.data).returning();
+  if (project.latestUpdate) {
+    await db.insert(projectUpdatesTable).values({ projectId: project.id, message: project.latestUpdate });
+  }
   const detailed = await buildProjectWithDetails(project);
   res.status(201).json(CreateProjectResponse.parse(detailed));
 });
@@ -128,6 +131,11 @@ router.patch("/projects/:id", requireAdmin, async (req, res): Promise<void> => {
   if (!project) {
     res.status(404).json({ error: "Project not found" });
     return;
+  }
+
+  // Keep a history of every message so the client sees a timeline
+  if (parsed.data.latestUpdate) {
+    await db.insert(projectUpdatesTable).values({ projectId: project.id, message: parsed.data.latestUpdate });
   }
 
   const detailed = await buildProjectWithDetails(project);
