@@ -28,6 +28,7 @@ function formatClient(client: typeof clientsTable.$inferSelect, user?: typeof us
     notes: client.notes ?? null,
     userName: user?.name ?? "",
     userEmail: user?.email ?? client.email,
+    isDemo: client.isDemo,
   };
 }
 

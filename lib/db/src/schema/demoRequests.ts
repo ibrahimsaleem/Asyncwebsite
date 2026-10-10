@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, boolean, text, serial, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -10,6 +10,7 @@ export const demoRequestsTable = pgTable("demo_requests", {
   phone: text("phone").notNull(),
   industry: text("industry").notNull(),
   message: text("message"),
+  isDemo: boolean("is_demo").notNull().default(false), // sample data from the first run, labelled DEMO in admin
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -17,4 +17,5 @@ export interface ClientWithUser {
   notes?: string | null;
   userName?: string;
   userEmail?: string;
+  isDemo?: boolean;
 }

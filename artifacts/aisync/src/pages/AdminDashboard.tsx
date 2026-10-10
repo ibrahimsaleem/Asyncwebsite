@@ -146,6 +146,16 @@ function Field({ label, hint, className = "", children }: { label: string; hint?
   );
 }
 
+// Sample records created on the site's first run, so nobody mistakes them for real clients
+function DemoBadge({ show = true }: { show?: boolean }) {
+  if (!show) return null;
+  return (
+    <span title="Sample data, not a real client" className="inline-flex items-center shrink-0 px-1.5 py-0.5 rounded border border-amber-400/40 bg-amber-500/15 text-amber-300 text-[10px] font-bold tracking-wider uppercase">
+      Demo
+    </span>
+  );
+}
+
 function PageHeader({ title, subtitle, action }: { title: string; subtitle?: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
@@ -240,6 +250,9 @@ export default function AdminDashboard() {
   const invoices = invoicesQ.data;
   const featureRequests = featureRequestsQ.data;
   const demoRequests = demoRequestsQ.data;
+  const demoClientIds = new Set((clients ?? []).filter((c) => c.isDemo).map((c) => c.id));
+  const isDemoClient = (id?: number | null) => id != null && demoClientIds.has(id);
+  const hasDemoData = demoClientIds.size > 0 || (demoRequests ?? []).some((d) => d.isDemo);
 
   const createClient = useCreateClient();
   const createProject = useCreateProject();
@@ -505,6 +518,16 @@ export default function AdminDashboard() {
                 <p className="text-muted-foreground text-sm mt-1">Here's what's happening across your client base today.</p>
               </div>
 
+              {hasDemoData && (
+                <div role="note" className="flex items-start gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm">
+                  <DemoBadge />
+                  <p className="text-amber-100/90">
+                    Anything labelled <b>Demo</b> is sample data created when the site was first set up: {demoClientIds.size} sample clients with their projects, invoices and requests, plus sample demo leads.
+                    They are not real. The totals below include them. Real clients have no label.
+                  </p>
+                </div>
+              )}
+
               {/* KPI cards */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {[
@@ -573,7 +596,7 @@ export default function AdminDashboard() {
                       return (
                         <div key={d.id} className="px-5 py-3.5 flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{d.name}</p>
+                            <p className="text-sm font-medium truncate flex items-center gap-2">{d.name} <DemoBadge show={!!d.isDemo} /></p>
                             <p className="text-xs text-muted-foreground truncate">{d.businessName}</p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -602,7 +625,7 @@ export default function AdminDashboard() {
                       <div key={r.id} className="px-5 py-3.5 flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{r.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{r.clientBusinessName}</p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-2">{r.clientBusinessName} <DemoBadge show={isDemoClient(r.clientId)} /></p>
                         </div>
                         <span className={`${PILL} ${FR_STATUS_STYLES[r.status] ?? NEUTRAL_PILL}`}>{frLabel(r.status)}</span>
                       </div>
@@ -686,7 +709,7 @@ export default function AdminDashboard() {
                             {initials(c.userName ?? c.businessName)}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">{c.userName ?? c.businessName}</p>
+                            <p className="font-semibold text-sm truncate flex items-center gap-2"><span className="truncate">{c.userName ?? c.businessName}</span> <DemoBadge show={!!c.isDemo} /></p>
                             <p className="text-xs text-muted-foreground truncate">{c.businessName}</p>
                           </div>
                         </div>
@@ -751,7 +774,7 @@ export default function AdminDashboard() {
                     <Field label="Client *" className="sm:col-span-2">
                       <select required value={newProjClientId} onChange={(e) => setNewProjClientId(e.target.value)} className={INPUT}>
                         <option value="">{(clients ?? []).length ? "Select a client…" : "No clients yet — add one first"}</option>
-                        {clients?.map((c) => <option key={c.id} value={c.id}>{c.businessName} ({c.userEmail})</option>)}
+                        {clients?.map((c) => <option key={c.id} value={c.id}>{c.businessName} ({c.userEmail}){c.isDemo ? " · DEMO" : ""}</option>)}
                       </select>
                     </Field>
                     <Field label="Project name *">
@@ -791,6 +814,7 @@ export default function AdminDashboard() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <p className="font-semibold break-words">{p.projectName}</p>
+                            <DemoBadge show={isDemoClient(p.clientId)} />
                             <span className={`${PILL} ${statusStyle}`}>{PROJECT_STATUS_LABELS[p.status] ?? titleCase(p.status)}</span>
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
@@ -1002,7 +1026,7 @@ export default function AdminDashboard() {
                         return (
                           <tr key={inv.id} className="hover:bg-secondary/10 transition-colors">
                             <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground">#{inv.id}</td>
-                            <td className="px-5 py-3.5 font-medium">{inv.clientBusinessName ?? `Client #${inv.clientId}`}</td>
+                            <td className="px-5 py-3.5 font-medium"><span className="inline-flex items-center gap-2">{inv.clientBusinessName ?? `Client #${inv.clientId}`} <DemoBadge show={isDemoClient(inv.clientId)} /></span></td>
                             <td className="px-5 py-3.5 font-semibold text-right tabular-nums">{money(inv.totalAmount)}</td>
                             <td className="px-5 py-3.5 text-emerald-400 font-medium text-right tabular-nums">{money(inv.paidAmount)}</td>
                             <td className={`px-5 py-3.5 font-medium text-right tabular-nums ${due > 0 ? "text-red-400" : "text-muted-foreground"}`}>{money(due)}</td>
@@ -1044,7 +1068,7 @@ export default function AdminDashboard() {
                             <span className={`${PILL} ${FR_STATUS_STYLES[req.status] ?? NEUTRAL_PILL}`}>{frLabel(req.status)}</span>
                           </div>
                           {req.description && <p className="text-sm text-muted-foreground">{req.description}</p>}
-                          {req.clientBusinessName && <p className="text-xs text-muted-foreground/70 mt-1.5 flex items-center gap-1"><Building2 className="w-3 h-3" /> {req.clientBusinessName}</p>}
+                          {req.clientBusinessName && <p className="text-xs text-muted-foreground/70 mt-1.5 flex items-center gap-1"><Building2 className="w-3 h-3" /> {req.clientBusinessName} <DemoBadge show={isDemoClient(req.clientId)} /></p>}
                         </div>
                         {actionable && (
                           <div className="flex gap-2 shrink-0">
@@ -1083,6 +1107,7 @@ export default function AdminDashboard() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-semibold text-sm">{d.name}</p>
                               {d.industry && <span className={`${PILL} ${is.bg} ${is.text}`}>{d.industry}</span>}
+                              <DemoBadge show={!!d.isDemo} />
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">{d.businessName}</p>
                             {d.message && <p className="text-xs text-muted-foreground mt-2 line-clamp-2 italic">“{d.message}”</p>}
@@ -1133,7 +1158,7 @@ export default function AdminDashboard() {
                   {initials(selectedClient.userName ?? selectedClient.businessName)}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-sm truncate">{selectedClient.userName ?? selectedClient.businessName}</p>
+                  <p className="font-bold text-sm truncate flex items-center gap-2"><span className="truncate">{selectedClient.userName ?? selectedClient.businessName}</span> <DemoBadge show={!!selectedClient.isDemo} /></p>
                   <p className="text-xs text-muted-foreground truncate">{selectedClient.businessName}</p>
                 </div>
               </div>

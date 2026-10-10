@@ -55,7 +55,7 @@ export async function seedIfEmpty() {
     const [existingClient] = await db.select().from(clientsTable).where(eq(clientsTable.userId, user.id));
     if (existingClient) return;
 
-    const [client] = await db.insert(clientsTable).values({ userId: user.id, email: userEmail, ...clientData }).returning();
+    const [client] = await db.insert(clientsTable).values({ userId: user.id, email: userEmail, ...clientData, isDemo: true }).returning();
     const [project] = await db.insert(projectsTable).values({ clientId: client.id, ...projectData } as any).returning();
 
     await db.insert(projectAssignmentsTable).values(
@@ -139,9 +139,9 @@ export async function seedIfEmpty() {
   const existingDemos = await db.select().from(demoRequestsTable);
   if (existingDemos.length === 0) {
     await db.insert(demoRequestsTable).values([
-      { name: "Priya Sharma", businessName: "Lotus Spa & Wellness", email: "priya@lotuswellness.com", phone: "+1 (555) 721-4432", industry: "Clinics", message: "We run a med spa with 3 locations and are losing dozens of booking calls every week. Very interested in your solution — can we see a healthcare demo?" },
-      { name: "Derek Walsh", businessName: "Walsh Plumbing & HVAC", email: "derek@walshplumbing.com", phone: "+1 (555) 834-0192", industry: "Service Trades", message: "Emergency calls come in at all hours. I need an agent that can take the call, get the address and issue details, and dispatch my on-call plumber automatically." },
-      { name: "Monica Fleury", businessName: "Fleury Law Group", email: "m.fleury@fleurylaw.com", phone: "+1 (555) 293-6600", industry: "Other", message: "We need an agent to handle initial client intake calls and route to the correct practice area attorney. HIPAA compliance and call recording are both required." },
+      { name: "Priya Sharma", businessName: "Lotus Spa & Wellness", email: "priya@lotuswellness.com", phone: "+1 (555) 721-4432", industry: "Clinics", message: "We run a med spa with 3 locations and are losing dozens of booking calls every week. Very interested in your solution — can we see a healthcare demo?", isDemo: true },
+      { name: "Derek Walsh", businessName: "Walsh Plumbing & HVAC", email: "derek@walshplumbing.com", phone: "+1 (555) 834-0192", industry: "Service Trades", message: "Emergency calls come in at all hours. I need an agent that can take the call, get the address and issue details, and dispatch my on-call plumber automatically.", isDemo: true },
+      { name: "Monica Fleury", businessName: "Fleury Law Group", email: "m.fleury@fleurylaw.com", phone: "+1 (555) 293-6600", industry: "Other", message: "We need an agent to handle initial client intake calls and route to the correct practice area attorney. HIPAA compliance and call recording are both required.", isDemo: true },
     ]);
   }
 }

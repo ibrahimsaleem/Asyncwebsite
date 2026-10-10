@@ -72,6 +72,7 @@ export interface DemoRequest {
   /** @nullable */
   message?: string | null;
   createdAt: string;
+  isDemo?: boolean;
 }
 
 export interface ClientInput {
@@ -104,6 +105,7 @@ export interface ClientWithUser {
   notes?: string | null;
   userName?: string;
   userEmail?: string;
+  isDemo?: boolean;
 }
 
 export type ProjectInputStatus = typeof ProjectInputStatus[keyof typeof ProjectInputStatus];

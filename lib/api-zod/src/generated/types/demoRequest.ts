@@ -16,4 +16,5 @@ export interface DemoRequest {
   /** @nullable */
   message?: string | null;
   createdAt: string;
+  isDemo?: boolean;
 }

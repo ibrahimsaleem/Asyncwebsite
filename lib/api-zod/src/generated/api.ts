@@ -109,7 +109,8 @@ export const CreateDemoRequestResponse = zod.object({
   "phone": zod.string(),
   "industry": zod.string(),
   "message": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "isDemo": zod.boolean().optional()
 })
 
 
@@ -124,7 +125,8 @@ export const ListDemoRequestsResponseItem = zod.object({
   "phone": zod.string(),
   "industry": zod.string(),
   "message": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "isDemo": zod.boolean().optional()
 })
 export const ListDemoRequestsResponse = zod.array(ListDemoRequestsResponseItem)
 
@@ -141,7 +143,8 @@ export const ListClientsResponseItem = zod.object({
   "email": zod.string(),
   "notes": zod.string().nullish(),
   "userName": zod.string().optional(),
-  "userEmail": zod.string().optional()
+  "userEmail": zod.string().optional(),
+  "isDemo": zod.boolean().optional()
 })
 export const ListClientsResponse = zod.array(ListClientsResponseItem)
 
@@ -168,7 +171,8 @@ export const CreateClientResponse = zod.object({
   "email": zod.string(),
   "notes": zod.string().nullish(),
   "userName": zod.string().optional(),
-  "userEmail": zod.string().optional()
+  "userEmail": zod.string().optional(),
+  "isDemo": zod.boolean().optional()
 })
 
 
@@ -184,7 +188,8 @@ export const GetMyClientResponse = zod.object({
   "email": zod.string(),
   "notes": zod.string().nullish(),
   "userName": zod.string().optional(),
-  "userEmail": zod.string().optional()
+  "userEmail": zod.string().optional(),
+  "isDemo": zod.boolean().optional()
 })
 
 
@@ -204,7 +209,8 @@ export const GetClientResponse = zod.object({
   "email": zod.string(),
   "notes": zod.string().nullish(),
   "userName": zod.string().optional(),
-  "userEmail": zod.string().optional()
+  "userEmail": zod.string().optional(),
+  "isDemo": zod.boolean().optional()
 })
 
 
@@ -231,7 +237,8 @@ export const UpdateClientResponse = zod.object({
   "email": zod.string(),
   "notes": zod.string().nullish(),
   "userName": zod.string().optional(),
-  "userEmail": zod.string().optional()
+  "userEmail": zod.string().optional(),
+  "isDemo": zod.boolean().optional()
 })
 
 

@@ -731,6 +731,8 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+        isDemo:
+          type: boolean
 
     # Clients
     ClientInput:
@@ -786,6 +788,8 @@ components:
           type: string
         userEmail:
           type: string
+        isDemo:
+          type: boolean
 
     # Projects
     ProjectInput:
