@@ -23,12 +23,16 @@ function splitAnswer(answer: string, options: string[]) {
 const joinAnswer = (chosen: string[], note: string) => [...chosen, ...(note ? [note] : [])].join(SEP);
 // "Pick all that apply" / "Pick 4" questions allow several answers; the rest allow one.
 const isMulti = (q: Question) => /pick (all|\d)/i.test(q.question);
+// "Pick 4" caps how many can be chosen; "Pick all that apply" has no cap
+const maxPicks = (q: Question) => Number(/pick (\d+)/i.exec(q.question)?.[1]) || Infinity;
 function toggleOption(q: Question, answer: string, option: string) {
   const options = q.options ?? [];
   const { chosen, note } = splitAnswer(answer, options);
   const on = chosen.includes(option);
   const next = isMulti(q)
-    ? (on ? chosen.filter((c) => c !== option) : options.filter((o) => o === option || chosen.includes(o)))
+    ? (on ? chosen.filter((c) => c !== option)
+      : chosen.length >= maxPicks(q) ? chosen // at the limit: ignore until one is unticked
+      : options.filter((o) => o === option || chosen.includes(o)))
     : (on ? [] : [option]);
   return joinAnswer(next, note);
 }
@@ -426,16 +430,24 @@ export function QuestionsPanel({ projectId, isAdmin }: { projectId: number; isAd
                     {q.options && q.options.length > 0 && (
                       <div role="group" aria-label={isMulti(q) ? "Choose one or more" : "Choose one"} className="flex flex-wrap gap-2 mb-3 sm:pl-9">
                         {q.options.map((opt) => {
-                          const on = splitAnswer(draft[q.id] ?? "", q.options ?? []).chosen.includes(opt);
+                          const chosen = splitAnswer(draft[q.id] ?? "", q.options ?? []).chosen;
+                          const on = chosen.includes(opt);
+                          const full = !on && isMulti(q) && chosen.length >= maxPicks(q);
                           return (
-                            <motion.button key={opt} type="button" aria-pressed={on} whileTap={{ scale: 0.95 }}
+                            <motion.button key={opt} type="button" aria-pressed={on} disabled={full} whileTap={full ? undefined : { scale: 0.95 }}
                               onClick={() => edit(q.id, toggleOption(q, draft[q.id] ?? "", opt))}
-                              className={`inline-flex items-center gap-1.5 min-h-11 px-4 py-2 text-left rounded-full text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${on ? c.chipOn : c.chipOff}`}>
+                              className={`inline-flex items-center gap-1.5 min-h-11 px-4 py-2 text-left rounded-full text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-35 disabled:cursor-not-allowed ${on ? c.chipOn : c.chipOff}`}>
                               {on && <Check className="w-3.5 h-3.5" aria-hidden />}
                               {opt}
                             </motion.button>
                           );
                         })}
+                        {Number.isFinite(maxPicks(q)) && (
+                          <p className="basis-full text-xs text-muted-foreground" aria-live="polite">
+                            {splitAnswer(draft[q.id] ?? "", q.options ?? []).chosen.length} of {maxPicks(q)} picked
+                            {splitAnswer(draft[q.id] ?? "", q.options ?? []).chosen.length >= maxPicks(q) ? ". Untick one to change your choice." : ""}
+                          </p>
+                        )}
                       </div>
                     )}
                     <div className="sm:pl-9">
